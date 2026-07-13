@@ -138,7 +138,7 @@ export async function GET(
         ds.shared_at,
         ds.shared_by
       FROM document_shares ds
-      LEFT JOIN users u ON ds.user_id = u.id
+      LEFT JOIN "user" u ON ds.user_id = u.id
       WHERE ds.document_id = ${documentId}
       ORDER BY ds.shared_at DESC
     `)

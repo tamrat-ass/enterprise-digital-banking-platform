@@ -159,6 +159,16 @@ export const documentVersions = pgTable("document_versions", {
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),  // Use SQL function, not defaultNow()
 })
 
+export const documentShares = pgTable("document_shares", {
+  id: text("id").primaryKey(),
+  documentId: text("document_id").notNull(),
+  userId: text("user_id").notNull(),
+  permission: text("permission").notNull().default("view"),
+  sharedBy: text("shared_by"),
+  sharedAt: timestamp("shared_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
 /* ---------------------------------------------------------------- */
 /* Workflow & Approvals                                             */
 /* ---------------------------------------------------------------- */
