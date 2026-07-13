@@ -145,19 +145,17 @@ export const ROLES: Record<RoleKey, RoleDefinition> = {
 }
 
 export function hasPermission(
-  rolePermissions: Permission[] | "*" | undefined,
+  rolePermissions: Permission[] | undefined,
   permission: Permission,
 ): boolean {
   if (!rolePermissions) return false
-  if (rolePermissions === "*") return true
   return rolePermissions.includes(permission)
 }
 
 export function canAccessModule(
-  rolePermissions: Permission[] | "*" | undefined,
+  rolePermissions: Permission[] | undefined,
   moduleKey: ModuleKey,
 ): boolean {
   if (!rolePermissions) return false
-  if (rolePermissions === "*") return true
   return rolePermissions.some((p) => p.startsWith(`${moduleKey}:`))
 }

@@ -106,10 +106,46 @@ export const documentCategories = pgTable("document_categories", {
 export const roles = pgTable("roles", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  key: text("key").notNull().unique(), // super_admin, executive, etc.
   description: text("description"),
-  level: integer("level").notNull().default(1),
-  permissions: jsonb("permissions").notNull().default([]),
+  level: integer("level").notNull().default(1), // For hierarchy
+  isSystem: boolean("is_system").notNull().default(false), // Can't be deleted
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+})
+
+export const permissions = pgTable("permissions", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(), // "documents:view", "documents:create", etc.
+  name: text("name").notNull(),
+  description: text("description"),
+  module: text("module").notNull(), // "documents", "approvals", etc.
+  action: text("action").notNull(), // "view", "create", "edit", "delete", etc.
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+export const rolePermissions = pgTable("role_permissions", {
+  id: text("id").primaryKey(),
+  roleId: text("role_id")
+    .notNull()
+    .references(() => roles.id, { onDelete: "cascade" }),
+  permissionId: text("permission_id")
+    .notNull()
+    .references(() => permissions.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+export const userRoles = pgTable("user_roles", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  roleId: text("role_id")
+    .notNull()
+    .references(() => roles.id, { onDelete: "cascade" }),
+  assignedBy: text("assigned_by"),
+  assignedAt: timestamp("assigned_at").notNull().defaultNow(),
 })
 
 export const profiles = pgTable("profiles", {
@@ -119,9 +155,10 @@ export const profiles = pgTable("profiles", {
   email: text("email"),
   jobTitle: text("job_title"),
   departmentId: text("department_id"),
-  roleId: text("role_id"),
+  divisionId: text("division_id"),
   status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 })
 
 /* ---------------------------------------------------------------- */
