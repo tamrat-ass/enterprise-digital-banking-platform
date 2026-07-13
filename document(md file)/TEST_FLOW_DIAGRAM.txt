@@ -1,0 +1,224 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                         UPLOAD TEST FLOW DIAGRAM                            ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+START HERE
+═══════════════════════════════════════════════════════════════════════════════
+
+                            npm run dev
+                                 ↓
+                    Terminal: "✓ Ready in X.Xs"
+                                 ↓
+                              ✅ SERVER UP
+
+
+STEP 1: CHECK DATABASE
+═══════════════════════════════════════════════════════════════════════════════
+
+          Browser: /api/admin/fix-database
+                        ↓
+              ┌─────────┴──────────┐
+              ↓                    ↓
+       "action": "exists"   "action": "created"
+       ✅ Column OK          ✅ Column Created
+              ↓                    ↓
+              └─────────┬──────────┘
+                        ↓
+                   ✅ PROCEED
+
+
+STEP 2: CHECK CURRENT STATUS
+═══════════════════════════════════════════════════════════════════════════════
+
+          Browser: /api/admin/test-upload
+                        ↓
+        See: documentsWithFilePath: X
+        See: documentsWithoutFilePath: Y
+                        ↓
+          Note these numbers for comparison
+
+
+STEP 3: CREATE & UPLOAD TEST FILE
+═══════════════════════════════════════════════════════════════════════════════
+
+    Create test.txt          Browser: /upload
+    With content:            Drag file or click Browse
+    "Hello World..."         Select: test.txt
+           ↓                        ↓
+           └────────┬───────────────┘
+                    ↓
+          Fill form fields:
+          - Title
+          - Category  
+          - Department
+          - Division
+                    ↓
+                Click Upload
+                    ↓
+         ┌──────────┴──────────┐
+         ↓                     ↓
+    GREEN SUCCESS          RED ERROR
+    "Successfully..."      "Failed..."
+         ↓                     ↓
+    ✅ CONTINUE           ❌ CHECK LOGS
+         ↓
+    BROWSER: "Successfully uploaded"
+
+
+STEP 4: MONITOR SERVER LOGS
+═══════════════════════════════════════════════════════════════════════════════
+
+Terminal: Look for these logs in order:
+
+    [FileUploadForm] Uploading file:
+         ↓
+    [POST Documents] FormData received:
+         ↓
+    [POST Documents] FormData parsed:
+         ↓
+    [DocumentService] Saving file for document:
+         ↓
+    [FileStorageService] File written successfully:
+         ↓
+    [DocumentService] File saved successfully at:
+         ↓
+    [DocumentService] File path verified as non-null:
+         ↓
+    [DocumentService] About to insert document_version:
+         ↓
+    [DocumentService] Verification - data in database:
+         ↓
+         
+    LOOK FOR: "filePathIsNull": false
+    
+         ├─ YES (false) → ✅ File path IS being saved!
+         └─ NO (true)  → ❌ File path NOT being saved
+
+
+STEP 5: CHECK DATABASE AGAIN
+═══════════════════════════════════════════════════════════════════════════════
+
+          Browser: /api/admin/test-upload
+                        ↓
+    Compare with Step 2:
+    
+    Before:                After:
+    Total: 5              Total: 6 (+1) ✓
+    With Path: 3          With Path: 4 (+1) ✓
+    Without Path: 2       Without Path: 2 (same) ✓
+    
+    Find your document:
+    "status": "✅ HAS FILE_PATH"
+    "filePath": "/uploads/[UUID].txt"
+                        ↓
+         ✅ Document stored correctly
+
+
+STEP 6: TEST PREVIEW
+═══════════════════════════════════════════════════════════════════════════════
+
+    Browser: /file-management
+         ↓
+    Find: "Test Upload" in table
+         ↓
+    Click: Preview button
+         ↓
+    ┌──────────────────┬──────────────────┐
+    ↓                  ↓
+FILE DISPLAYS      ERROR MESSAGE
+"Hello World..."   "No file attached"
+    ↓                  ↓
+✅ SUCCESS         ❌ FAILURE
+    ↓                  ↓
+PROCEED            CHECK LOGS
+
+
+STEP 7: TEST DOWNLOAD
+═══════════════════════════════════════════════════════════════════════════════
+
+    Browser: /file-management
+         ↓
+    Find: "Test Upload" in table
+         ↓
+    Click: Download button
+         ↓
+    ┌──────────────────┬──────────────────┐
+    ↓                  ↓
+FILE DOWNLOADS    ERROR
+test.txt appears  "File not found"
+in Downloads      or similar
+    ↓                  ↓
+✅ SUCCESS         ❌ FAILURE
+    ↓                  ↓
+   DONE!          CHECK LOGS
+
+
+FINAL RESULT
+═══════════════════════════════════════════════════════════════════════════════
+
+    ALL STEPS PASSED?
+    
+    ✅ Step 1: Database OK
+    ✅ Step 2: Status checked
+    ✅ Step 3: Upload success
+    ✅ Step 4: Logs show "filePathIsNull": false
+    ✅ Step 5: Document count increased
+    ✅ Step 6: Preview works
+    ✅ Step 7: Download works
+    
+                         ↓
+                         
+          🎉 UPLOAD UPDATE IS WORKING! 🎉
+          
+        All file operations functioning correctly:
+        - Files saved to disk ✓
+        - Paths stored in database ✓
+        - Preview displays files ✓
+        - Download works ✓
+        - All logs showing success ✓
+
+
+TROUBLESHOOTING PATHS
+═══════════════════════════════════════════════════════════════════════════════
+
+STEP 1 FAILS (Database):
+    Run: /api/admin/fix-database again
+    If says "created": Column was missing, now fixed
+    Try uploading again
+
+
+STEP 3 FAILS (Upload):
+    Check browser console (F12)
+    Look for error message
+    Try filling form fields again
+
+
+STEP 4 FAILS (filePathIsNull: true):
+    File not being saved to database
+    Possible issues:
+    - File save silently failed
+    - Database insert failed
+    Share these logs
+
+
+STEP 6 FAILS (Preview error):
+    Check /api/admin/test-upload
+    If shows ❌ NO FILE_PATH:
+        Go back to Step 4
+        File path not in database
+    If shows ✅ HAS FILE_PATH:
+        File might not exist on disk
+        Check: public/uploads/ directory
+
+
+STEP 7 FAILS (Download error):
+    Same as Step 6
+    Check if file_path in database
+    Check if file exists on disk
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Time Estimate: 20 minutes total
+
+Good luck! 🚀

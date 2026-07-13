@@ -1,0 +1,112 @@
+================================================================================
+QUICK START - FILE UPLOAD FIX
+================================================================================
+
+PROBLEM: "This document does not have a file attached"
+ROOT CAUSE: file_path is NULL in database
+
+================================================================================
+3-MINUTE QUICK FIX
+================================================================================
+
+1. Check Database:
+   Open: http://localhost:3000/api/admin/fix-database
+   Expected: {"success": true, "action": "exists"}
+
+2. Check Status:
+   Open: http://localhost:3000/api/admin/test-upload
+   Look for: "documentsWithFilePath" count
+
+3. Upload Test:
+   Go to: http://localhost:3000/upload
+   Upload small file (test.txt or small PDF)
+   Watch: Terminal logs for [FileStorageService] and [DocumentService]
+
+================================================================================
+SUCCESS LOGS TO SEE
+================================================================================
+
+[FileStorageService] File written successfully: /path/to/uploads/[UUID].txt
+[DocumentService] File saved successfully at: /uploads/[UUID].txt
+[DocumentService] Verification - data in database: {"filePath": "/uploads/[UUID].txt"}
+
+If you see these → UPLOAD IS WORKING ✅
+
+================================================================================
+IF STILL BROKEN
+================================================================================
+
+1. Check database again:
+   http://localhost:3000/api/admin/test-upload
+   
+   If your document shows:
+   "status": "❌ NO FILE_PATH (NULL)"
+   → Go to FULL_VERIFICATION below
+
+2. Share these details:
+   - Output from /api/admin/test-upload
+   - Server logs during upload
+   - Database query: SELECT * FROM document_versions LIMIT 1;
+
+================================================================================
+FULL VERIFICATION (7 STEPS)
+================================================================================
+
+See: FINAL_UPLOAD_FIX_GUIDE.md
+
+Quick version:
+Step 1: Fix database (2 min)
+Step 2: Check status (3 min)
+Step 3: Upload test file (10 min)
+Step 4: Check logs (5 min)
+Step 5: Query database (5 min)
+Step 6: Check disk (2 min)
+Step 7: Test preview (2 min)
+
+================================================================================
+DIAGNOSTIC ENDPOINTS
+================================================================================
+
+Check/Fix Database:
+GET http://localhost:3000/api/admin/fix-database
+
+Check Upload Status:
+GET http://localhost:3000/api/admin/test-upload
+
+Clear Test Documents:
+POST http://localhost:3000/api/admin/test-upload
+Body: {"action":"clear-all"}
+
+================================================================================
+WHAT WAS FIXED
+================================================================================
+
+✅ Enhanced logging for all file operations
+✅ Database verification endpoint
+✅ Upload status checker
+✅ Read-back verification after insert
+✅ Better FormData parsing
+✅ Improved error messages
+
+================================================================================
+FILES UPLOADED BEFORE THIS FIX
+================================================================================
+
+If you have old uploads showing "No file attached":
+1. Download the original file
+2. Upload it again through the form
+3. New upload will have file_path
+4. Old metadata-only documents can be deleted
+
+================================================================================
+REFERENCES
+================================================================================
+
+Full Guide: FINAL_UPLOAD_FIX_GUIDE.md
+Action Plan: UPLOAD_FIX_ACTION_PLAN.md
+Issue Summary: UPLOAD_ISSUE_RESOLVED.md
+
+================================================================================
+BUILD STATUS: ✅ PASSING
+DATE: July 6, 2026
+================================================================================

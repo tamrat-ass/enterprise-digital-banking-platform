@@ -1,0 +1,144 @@
+================================================================================
+QUICK FIX - 3 STEPS ONLY
+================================================================================
+
+STEP 1: Check Database Column
+────────────────────────────────────────────────────────────────────────────
+Open browser and go to:
+  
+  http://localhost:3000/api/admin/fix-database
+
+Expected response:
+  {"success": true, "action": "exists", ...}  → Column exists, skip to Step 3
+  {"success": true, "action": "created", ...} → Column was created ✅
+
+If error → Database connection issue, check .env.local DATABASE_URL
+
+
+STEP 2: Upload Test File
+────────────────────────────────────────────────────────────────────────────
+Go to: http://localhost:3000/upload
+
+Fill form:
+  - Title: "Test"
+  - Category: Any
+  - Department: Any
+  - Division: Any
+  - Select: Any file
+
+Click: Upload
+
+Watch server logs (terminal/console) for:
+  ✅ [DocumentService] File saved successfully at: /uploads/...
+  ✅ [DocumentService] Document version inserted successfully with filePath:
+
+If ✅ → File saved properly
+If ❌ errors → Check next section
+
+
+STEP 3: Test Preview
+────────────────────────────────────────────────────────────────────────────
+Go to: http://localhost:3000/file-management
+
+Click: Preview button on your test file
+
+Result:
+  ✅ File opens in new tab = WORKING!
+  ❌ Error message = Still broken
+
+If still broken after all steps above → See TROUBLESHOOTING below
+
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Error: "No such file or directory" in logs
+  → Create directory: mkdir D:\enterprise-digital-banking-platform\public\uploads
+  → Retry upload
+
+Error: "file_path IS NULL" 
+  → FileStorageService not returning path
+  → Check: Is /public/uploads directory writable?
+  → Check: Disk space available?
+
+Error: "permission denied"
+  → /public/uploads directory not writable by Node process
+  → Check permissions
+
+Error: File exists but preview shows "no file attached"
+  → File is on disk but file_path is NULL in database
+  → Manually run SQL: UPDATE document_versions SET file_path = '/uploads/...' WHERE...
+  → Or: Re-upload file with enhanced code
+
+Still stuck?
+  → See: COMPLETE_FIX_GUIDE.md for detailed diagnostic steps
+  → Or: Run DEBUG_SQL_QUERIES.md queries to check database
+
+================================================================================
+SUCCESS CRITERIA
+================================================================================
+
+When working correctly, you should see:
+
+1. Upload succeeds (no error)
+2. Server logs show file saved successfully
+3. File exists in /public/uploads/
+4. Database shows /uploads/... (not NULL) in file_path column
+5. Preview displays the file (or helpful message for old docs)
+
+================================================================================
+EXPECTED SERVER LOGS FOR SUCCESSFUL UPLOAD
+================================================================================
+
+[DocumentService] Creating document: {title: '...', ...}
+[DocumentService] Saving file for document: {...}
+[FileStorageService] Starting file save: {fileName: '...', ...}
+[FileStorageService] Upload dir ensured
+[FileStorageService] File written successfully: /path/to/public/uploads/[uuid].pdf
+[FileStorageService] File verified: {size: 12345}
+[FileStorageService] Returning relative path: /uploads/[uuid].pdf
+[DocumentService] File saved successfully at: /uploads/[uuid].pdf
+[DocumentService] About to insert document_version with: {filePath: '/uploads/...', filePathIsNull: false}
+[DocumentService] Document version inserted successfully with filePath: /uploads/[uuid].pdf
+
+If you see all of these ✅ → Upload succeeded!
+
+================================================================================
+DATABASE CHECK (Advanced)
+================================================================================
+
+Open PostgreSQL and run:
+
+SELECT file_path FROM document_versions 
+ORDER BY created_at DESC LIMIT 1;
+
+Expected: /uploads/[uuid].pdf
+Not expected: NULL or empty
+
+If NULL → Problem is in upload flow, check server logs
+
+================================================================================
+BUILD & DEPLOY
+================================================================================
+
+Build: npm run build
+  Should say: "Compiled successfully"
+
+Deploy: Use your deployment method
+  Push changes to production
+
+Monitor: Watch server logs for 24 hours
+  Look for: [FileStorageService] or [DocumentService] errors
+
+================================================================================
+THAT'S IT! 3 SIMPLE STEPS
+================================================================================
+
+1. Check database column (auto-fix if needed)
+2. Upload test file (verify in logs)
+3. Test preview (should work now)
+
+If any step fails → Check TROUBLESHOOTING section above
+
+Good luck! 🚀

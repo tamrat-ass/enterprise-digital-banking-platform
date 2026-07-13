@@ -1,0 +1,371 @@
+═════════════════════════════════════════════════════════════════════════════════
+                    STEP-BY-STEP UPLOAD TEST GUIDE
+                         Follow Along Like a Video
+═════════════════════════════════════════════════════════════════════════════════
+
+TIME: 20 minutes total
+DIFFICULTY: Easy - Just follow the steps
+
+═════════════════════════════════════════════════════════════════════════════════
+PART 1: SETUP (2 MINUTES)
+═════════════════════════════════════════════════════════════════════════════════
+
+STEP 1.1: Open Terminal
+───────────────────────────────────────────────────────────────────────────────
+1. Open Command Prompt or PowerShell
+2. Navigate to your project:
+   
+   cd d:\enterprise-digital-banking-platform
+
+3. Run the dev server:
+   
+   npm run dev
+
+EXPECTED: You'll see something like:
+   > next dev
+   ✓ Ready in 2.5s
+   ▲ Next.js 16.2.6
+
+4. KEEP THIS TERMINAL OPEN - you'll need to watch the logs!
+
+STEP 1.2: Open Browser
+───────────────────────────────────────────────────────────────────────────────
+1. Open any web browser (Chrome, Firefox, Edge, Safari)
+2. Type in address bar: http://localhost:3000
+3. You should see the app home page
+
+═════════════════════════════════════════════════════════════════════════════════
+PART 2: PRE-FLIGHT CHECKS (3 MINUTES)
+═════════════════════════════════════════════════════════════════════════════════
+
+CHECK 1: Database Column
+───────────────────────────────────────────────────────────────────────────────
+1. In browser address bar, type:
+   
+   http://localhost:3000/api/admin/fix-database
+
+2. Hit Enter
+
+WHAT YOU'LL SEE: JSON response like this:
+   {
+     "success": true,
+     "action": "exists",
+     "message": "file_path column already exists"
+   }
+
+WHAT IT MEANS:
+   ✓ Database is ready
+   ✓ Column exists and can store file paths
+   ✓ Everything is set up correctly
+
+ACTION: Write down "Database OK" ✓
+
+
+CHECK 2: Current Upload Status
+───────────────────────────────────────────────────────────────────────────────
+1. In browser address bar, type:
+   
+   http://localhost:3000/api/admin/test-upload
+
+2. Hit Enter
+
+WHAT YOU'LL SEE: JSON with a summary like:
+   "summary": {
+     "totalDocuments": 5,
+     "documentsWithFilePath": 3,
+     "documentsWithoutFilePath": 2
+   }
+
+WHAT IT MEANS:
+   - You have 5 total documents
+   - 3 have file paths (good)
+   - 2 don't have file paths (old documents or broken uploads)
+
+ACTION: Remember these numbers for later comparison:
+   Before Upload:
+   - Total: ___
+   - With Path: ___
+   - Without Path: ___
+
+═════════════════════════════════════════════════════════════════════════════════
+PART 3: CREATE TEST FILE (1 MINUTE)
+═════════════════════════════════════════════════════════════════════════════════
+
+STEP 3.1: Create Text File
+───────────────────────────────────────────────────────────────────────────────
+1. Open Notepad (search for "Notepad" in Windows)
+
+2. Type exactly this:
+   
+   Hello World - This is a test file
+
+3. Click File → Save As
+
+4. Save as:
+   Filename: test.txt
+   Location: Desktop (or wherever you want)
+
+5. Click Save
+
+RESULT: You now have a test.txt file ready
+
+═════════════════════════════════════════════════════════════════════════════════
+PART 4: UPLOAD FILE (5 MINUTES)
+═════════════════════════════════════════════════════════════════════════════════
+
+STEP 4.1: Go to Upload Page
+───────────────────────────────────────────────────────────────────────────────
+1. In browser address bar, type:
+   
+   http://localhost:3000/upload
+
+2. Hit Enter
+
+WHAT YOU'LL SEE:
+   - "Upload Documents" header
+   - A large gray area that says "Drag & Drop" 
+   - A "Browse" button
+
+
+STEP 4.2: Upload the File
+───────────────────────────────────────────────────────────────────────────────
+1. Either:
+   Option A: Drag test.txt file into the gray area
+   Option B: Click "Browse" button and select test.txt
+
+2. File appears in the list
+
+3. Fill in the form:
+   
+   Document Title: Test Upload
+   Category: (click dropdown, pick any)
+   Department: (click dropdown, pick any)
+   Division: (click dropdown, pick any or leave blank)
+
+4. Click the "Upload" button (blue button at bottom)
+
+WHAT HAPPENS:
+   - Button shows "Uploading..."
+   - After ~2 seconds, you see GREEN message:
+     "Successfully uploaded 1 file(s)"
+
+WHAT IT MEANS:
+   ✓ File was accepted by server
+   ✓ Upload completed successfully
+
+═════════════════════════════════════════════════════════════════════════════════
+PART 5: MONITOR SERVER LOGS (2 MINUTES)
+═════════════════════════════════════════════════════════════════════════════════
+
+STEP 5.1: Switch to Terminal
+───────────────────────────────────────────────────────────────────────────────
+1. Click on the Terminal window (where npm run dev is running)
+
+2. Look at the logs (scroll up if needed)
+
+3. Find these messages (they might be at different lines):
+
+   [FileUploadForm] Uploading file: {
+     "fileName": "test.txt",
+     "size": 1024,
+     "type": "text/plain"
+   }
+
+4. Keep scrolling and find:
+
+   [DocumentService] Verification - data in database: {
+     "filePath": "/uploads/...",
+     "filePathIsNull": false
+   }
+
+WHAT TO LOOK FOR:
+   
+   GOOD: "filePathIsNull": false
+   ↑ This means file path WAS saved to database ✓
+   
+   BAD: "filePathIsNull": true
+   ↑ This means file path was NOT saved (problem!)
+
+ACTION:
+   ☐ Did you see: "filePathIsNull": false ?
+   ☐ If YES → File path is being saved correctly!
+   ☐ If NO → Copy this log and share it
+
+═════════════════════════════════════════════════════════════════════════════════
+PART 6: VERIFY DATABASE CHANGE (2 MINUTES)
+═════════════════════════════════════════════════════════════════════════════════
+
+STEP 6.1: Check Status Again
+───────────────────────────────────────────────────────────────────────────────
+1. Go back to browser
+
+2. In address bar type:
+   
+   http://localhost:3000/api/admin/test-upload
+
+3. Hit Enter
+
+4. Look at the "summary" section
+
+COMPARE WITH BEFORE:
+
+Before Upload:
+  totalDocuments: 5
+  documentsWithFilePath: 3
+
+After Upload:
+  totalDocuments: 6    (went UP by 1)
+  documentsWithFilePath: 4    (went UP by 1)
+
+WHAT IT MEANS:
+   ✓ New document was created
+   ✓ New document has file path
+   ✓ File path is in database!
+
+5. Scroll down and find your document:
+
+   "document": {
+     "title": "Test Upload",
+     ...
+   },
+   "status": "✅ HAS FILE_PATH",
+   "filePath": "/uploads/[some-uuid].txt"
+
+WHAT IT MEANS:
+   ✓ Your file has a path
+   ✓ Path is NOT NULL
+   ✓ Everything stored correctly!
+
+═════════════════════════════════════════════════════════════════════════════════
+PART 7: TEST PREVIEW (2 MINUTES)
+═════════════════════════════════════════════════════════════════════════════════
+
+STEP 7.1: Go to File Management
+───────────────────────────────────────────────────────────────────────────────
+1. In browser address bar, type:
+   
+   http://localhost:3000/file-management
+
+2. Hit Enter
+
+WHAT YOU'LL SEE:
+   - A table with all your documents
+   - Columns: File Name, Department, Division, Date, etc.
+   - Action buttons on the right (Preview, Download, etc.)
+
+
+STEP 7.2: Find and Preview Your File
+───────────────────────────────────────────────────────────────────────────────
+1. Look for the "Test Upload" document in the table
+
+2. Find the row with "Test Upload"
+
+3. On the right side, click the "Preview" button (eye icon or button)
+
+4. Wait 1-2 seconds
+
+WHAT YOU'LL SEE:
+
+   GOOD: File displays in preview window:
+         "Hello World - This is a test file"
+         ✓ This means preview is working!
+
+   BAD: Error message like:
+        "This document does not have a file attached"
+        ✗ This means something went wrong
+
+ACTION:
+   ☐ Does file display? → GOOD! Continue to next step
+   ☐ Does it show error? → Check logs, share results
+
+═════════════════════════════════════════════════════════════════════════════════
+PART 8: TEST DOWNLOAD (1 MINUTE)
+═════════════════════════════════════════════════════════════════════════════════
+
+STEP 8.1: Download File
+───────────────────────────────────────────────────────────────────────────────
+1. Go back to file-management page:
+   
+   http://localhost:3000/file-management
+
+2. Find "Test Upload" document
+
+3. Click the "Download" button (usually a down arrow icon)
+
+4. File should download to your Downloads folder
+
+WHAT YOU'LL SEE:
+   - Browser shows download notification
+   - File appears in Downloads folder as "test.txt"
+
+VERIFY:
+   1. Check your Downloads folder
+   2. You should see test.txt
+   3. Open it - it should contain:
+      "Hello World - This is a test file"
+
+RESULT:
+   ✓ Download works!
+   ✓ Everything is functioning!
+
+═════════════════════════════════════════════════════════════════════════════════
+FINAL RESULT
+═════════════════════════════════════════════════════════════════════════════════
+
+If you completed all steps and got ✓ on each:
+
+   ✓ Step 1: Server started
+   ✓ Step 2: Database OK
+   ✓ Step 3: Status checked
+   ✓ Step 4: File uploaded
+   ✓ Step 5: Logs show "filePathIsNull": false
+   ✓ Step 6: Document count increased
+   ✓ Step 7: Preview displays file
+   ✓ Step 8: Download works
+
+THEN:
+
+   🎉 THE UPLOAD UPDATE IS WORKING PERFECTLY! 🎉
+
+Your file upload system is now:
+   ✓ Saving files to disk
+   ✓ Storing file paths in database
+   ✓ Displaying previews correctly
+   ✓ Downloading files correctly
+   ✓ Fully functional!
+
+═════════════════════════════════════════════════════════════════════════════════
+IF SOMETHING WENT WRONG
+═════════════════════════════════════════════════════════════════════════════════
+
+PROBLEM 1: Upload fails with error
+───────────────────────────────────────────────────────────────────────────────
+ACTION: Check browser console (F12) for error message
+SHARE: The error message
+
+
+PROBLEM 2: Logs show "filePathIsNull": true
+───────────────────────────────────────────────────────────────────────────────
+ACTION: File path is not being saved
+SHARE: The complete logs from the upload attempt
+
+
+PROBLEM 3: Preview shows "No file attached"
+───────────────────────────────────────────────────────────────────────────────
+ACTION: File path is not in database or file doesn't exist
+SHARE: Output from /api/admin/test-upload
+
+
+PROBLEM 4: Any other error
+───────────────────────────────────────────────────────────────────────────────
+ACTION: Share:
+   1. What step failed
+   2. What error message you see
+   3. Output from /api/admin/test-upload
+   4. Server logs from the failure
+
+═════════════════════════════════════════════════════════════════════════════════
+
+DONE! You've tested the upload update.
+
+═════════════════════════════════════════════════════════════════════════════════

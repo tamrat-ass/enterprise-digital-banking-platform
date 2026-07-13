@@ -1,0 +1,146 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                          HOW TO LOG IN & TEST                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+NO DEFAULT CREDENTIALS EXIST
+═════════════════════════════════════════════════════════════════════════════
+
+The system uses Better Auth and requires you to create an account first.
+
+═════════════════════════════════════════════════════════════════════════════
+
+STEP 1: GO TO SIGN UP PAGE
+═════════════════════════════════════════════════════════════════════════════
+
+Open browser and go to:
+  http://localhost:3000/sign-up
+
+Or if you already have an account:
+  http://localhost:3000/sign-in
+
+═════════════════════════════════════════════════════════════════════════════
+
+STEP 2: FILL IN THE SIGN UP FORM
+═════════════════════════════════════════════════════════════════════════════
+
+Required fields:
+  
+  Full Name:        Admin User
+                    (or any name you want)
+
+  Email:            admin@ahadufile.com
+                    (or any email)
+
+  Password:         TestPassword123
+                    (minimum 8 characters)
+
+Optional fields (fill if you want):
+  
+  Job Title:        Finance Manager
+                    (or your role)
+
+  Role:             Select from dropdown
+                    - Staff Member
+                    - Department Head
+                    - Compliance Officer
+                    - Internal Auditor
+                    - Executive
+
+  Department:       Select from dropdown
+                    (any department)
+
+═════════════════════════════════════════════════════════════════════════════
+
+STEP 3: CLICK "CREATE ACCOUNT"
+═════════════════════════════════════════════════════════════════════════════
+
+Wait for processing...
+
+✅ If successful:
+   - Auto-login
+   - Redirected to dashboard
+   - Ready to use!
+
+❌ If error:
+   - Try different email
+   - Check password is 8+ chars
+   - Try again
+
+═════════════════════════════════════════════════════════════════════════════
+
+STEP 4: YOU'RE IN! 
+═════════════════════════════════════════════════════════════════════════════
+
+Now you can:
+  ✅ Go to /upload
+  ✅ Upload files
+  ✅ Preview documents
+  ✅ Download files
+  ✅ Access all features
+
+═════════════════════════════════════════════════════════════════════════════
+
+IMPORTANT: FIRST ACCOUNT = SUPER ADMIN
+═════════════════════════════════════════════════════════════════════════════
+
+The first account you create has SUPER ADMINISTRATOR access.
+
+This means:
+  ✓ Full access to everything
+  ✓ Can manage all users
+  ✓ Can manage roles & permissions
+  ✓ Can create departments/divisions
+  ✓ All admin features
+
+═════════════════════════════════════════════════════════════════════════════
+
+SUGGESTED TEST CREDENTIALS
+═════════════════════════════════════════════════════════════════════════════
+
+Use these when signing up:
+
+Email:        test@example.com
+Password:     Test12345
+Name:         Test User
+Role:         Staff Member
+Department:   Any
+
+(Or make up your own - there are no restrictions)
+
+═════════════════════════════════════════════════════════════════════════════
+
+TESTING UPLOAD AFTER LOGIN
+═════════════════════════════════════════════════════════════════════════════
+
+After signing in:
+
+1. Go to:     http://localhost:3000/upload
+
+2. Upload a test file:
+   - Create test.txt with "Hello World"
+   - Upload through the form
+
+3. Check features:
+   - ✅ File uploads
+   - ✅ File path in database
+   - ✅ Preview works
+   - ✅ Download works
+
+═════════════════════════════════════════════════════════════════════════════
+
+QUICK URLS
+═════════════════════════════════════════════════════════════════════════════
+
+Sign Up:          http://localhost:3000/sign-up
+Sign In:          http://localhost:3000/sign-in
+Dashboard:        http://localhost:3000/
+Upload Page:      http://localhost:3000/upload
+File Management:  http://localhost:3000/file-management
+
+═════════════════════════════════════════════════════════════════════════════
+
+READY? LET'S GO! 🚀
+
+Go to: http://localhost:3000/sign-up
+
+═════════════════════════════════════════════════════════════════════════════

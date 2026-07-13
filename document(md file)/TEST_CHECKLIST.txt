@@ -1,0 +1,211 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                     UPLOAD UPDATE TEST CHECKLIST                              ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+Copy this checklist and mark off each step as you complete it.
+
+─────────────────────────────────────────────────────────────────────────────────
+
+STEP 1: START SERVER
+─────────────────────────────────────────────────────────────────────────────────
+
+☐ Open Terminal
+☐ Run: npm run dev
+☐ Wait for "✓ Ready in X.Xs"
+☐ Note the URL: http://localhost:3000
+
+─────────────────────────────────────────────────────────────────────────────────
+
+STEP 2: CHECK DATABASE
+─────────────────────────────────────────────────────────────────────────────────
+
+☐ Open Browser
+☐ Go to: http://localhost:3000/api/admin/fix-database
+☐ Look for: "action": "exists" (or "created")
+☐ Verify: "success": true
+☐ Note: Database is OK ✓
+
+─────────────────────────────────────────────────────────────────────────────────
+
+STEP 3: CHECK CURRENT STATUS
+─────────────────────────────────────────────────────────────────────────────────
+
+☐ Go to: http://localhost:3000/api/admin/test-upload
+☐ Look for: "summary" section
+☐ Write down the numbers:
+    Before Upload:
+    - totalDocuments: ___
+    - documentsWithFilePath: ___
+    - documentsWithoutFilePath: ___
+
+─────────────────────────────────────────────────────────────────────────────────
+
+STEP 4: CREATE TEST FILE
+─────────────────────────────────────────────────────────────────────────────────
+
+☐ Open Notepad or Text Editor
+☐ Type: Hello World - This is a test file
+☐ Save as: test.txt
+☐ Remember where you saved it (Desktop or Documents)
+
+─────────────────────────────────────────────────────────────────────────────────
+
+STEP 5: UPLOAD FILE
+─────────────────────────────────────────────────────────────────────────────────
+
+☐ Go to: http://localhost:3000/upload
+☐ Drag test.txt into upload area (OR click Browse and select it)
+☐ Fill in form:
+    ☐ Document Title: Test Upload
+    ☐ Category: [Select any]
+    ☐ Department: [Select any]
+    ☐ Division: [Select any or leave blank]
+☐ Click Upload button
+☐ Wait for success message (green checkmark)
+☐ ✓ "Successfully uploaded 1 file(s)" - CHECK!
+
+─────────────────────────────────────────────────────────────────────────────────
+
+STEP 6: CHECK SERVER LOGS
+─────────────────────────────────────────────────────────────────────────────────
+
+☐ Switch to Terminal window
+☐ Look for these logs (scroll up if needed):
+
+    ☐ [FileUploadForm] Uploading file: ...
+    ☐ [POST Documents] FormData received: ...
+    ☐ [DocumentService] Saving file for document: ...
+    ☐ [FileStorageService] File written successfully: ...
+    ☐ [DocumentService] File saved successfully at: ...
+    ☐ [DocumentService] Verification - data in database:
+        ☐ Look for: "filePathIsNull": false
+
+☐ If you see: "filePathIsNull": false → GOOD! ✓
+
+─────────────────────────────────────────────────────────────────────────────────
+
+STEP 7: CHECK DATABASE AGAIN
+─────────────────────────────────────────────────────────────────────────────────
+
+☐ Go to: http://localhost:3000/api/admin/test-upload
+☐ Look for "summary":
+    After Upload:
+    - totalDocuments: ___
+    - documentsWithFilePath: ___
+    - documentsWithoutFilePath: ___
+
+☐ Verify: documentsWithFilePath increased by 1
+☐ Look for your document in the list
+☐ Check: "status": "✅ HAS FILE_PATH"
+☐ Check: "filePath": "/uploads/[UUID].txt" (NOT NULL)
+
+─────────────────────────────────────────────────────────────────────────────────
+
+STEP 8: TEST PREVIEW
+─────────────────────────────────────────────────────────────────────────────────
+
+☐ Go to: http://localhost:3000/file-management
+☐ Find: "Test Upload" document in the table
+☐ Click: Preview button
+☐ Verify: File content displays in browser
+    Should show: "Hello World - This is a test file"
+☐ ✓ Preview works!
+
+─────────────────────────────────────────────────────────────────────────────────
+
+STEP 9: TEST DOWNLOAD
+─────────────────────────────────────────────────────────────────────────────────
+
+☐ From file-management page, find "Test Upload"
+☐ Click: Download button
+☐ Verify: File downloads as test.txt
+☐ Check Downloads folder for test.txt
+☐ ✓ Download works!
+
+─────────────────────────────────────────────────────────────────────────────────
+
+FINAL RESULT
+─────────────────────────────────────────────────────────────────────────────────
+
+If all steps above are checked ☑ :
+
+    🎉 UPLOAD UPDATE IS WORKING PERFECTLY! 🎉
+
+    ✓ Database storing file paths
+    ✓ Files being saved to disk
+    ✓ Preview working
+    ✓ Download working
+    ✓ All logs showing correct values
+
+─────────────────────────────────────────────────────────────────────────────────
+
+IF SOMETHING FAILED
+─────────────────────────────────────────────────────────────────────────────────
+
+Which step failed? _____
+
+If Step 5 (upload):
+  ☐ Check browser console (F12) for errors
+  ☐ Verify all form fields are filled
+
+If Step 6 (logs):
+  ☐ Did you see "filePathIsNull": false?
+  ☐ If YES: file path is being saved ✓
+  ☐ If NO: file path is NULL - problem found!
+  ☐ Share the logs
+
+If Step 7 (database):
+  ☐ Did documentsWithFilePath count increase?
+  ☐ If NO: insert might have failed
+  ☐ Share the response
+
+If Step 8 (preview):
+  ☐ Does it show "No file attached"?
+  ☐ Or does file display?
+  ☐ Share the error message
+
+If Step 9 (download):
+  ☐ Does download fail?
+  ☐ Does file download correctly?
+  ☐ Share what happens
+
+─────────────────────────────────────────────────────────────────────────────────
+
+WHAT TO SHARE IF IT FAILS
+─────────────────────────────────────────────────────────────────────────────────
+
+Copy and share:
+
+1. Output from: http://localhost:3000/api/admin/test-upload
+   (Copy the entire JSON response)
+
+2. Server logs from Step 6:
+   (Copy the [DocumentService] and [FileStorageService] logs)
+
+3. What step failed and what error you see
+
+4. Your environment:
+   - Operating System: Windows / Mac / Linux
+   - Node version: [run: node --version]
+   - npm version: [run: npm --version]
+
+─────────────────────────────────────────────────────────────────────────────────
+
+QUICK REFERENCE
+─────────────────────────────────────────────────────────────────────────────────
+
+Key Endpoints:
+  Database Check:      http://localhost:3000/api/admin/fix-database
+  Upload Status:       http://localhost:3000/api/admin/test-upload
+  Upload Page:         http://localhost:3000/upload
+  File Management:     http://localhost:3000/file-management
+
+Expected Success Logs:
+  ✓ "filePathIsNull": false
+  ✓ "filePath": "/uploads/..."
+  ✓ "status": "✅ HAS FILE_PATH"
+
+Test File Content:
+  Hello World - This is a test file
+
+═════════════════════════════════════════════════════════════════════════════════
