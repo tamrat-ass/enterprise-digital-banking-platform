@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useDocumentRefresh } from '@/lib/contexts/document-refresh'
 import { fetchDocuments } from '@/app/actions/documents'
+import { ShareDialog } from './share-dialog'
 
 interface FileRecord {
   id: string
@@ -65,6 +66,8 @@ export function FileManagementTable() {
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [divisionsCache, setDivisionsCache] = useState<Record<string, string>>({})
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [selectedFileForShare, setSelectedFileForShare] = useState<FileRecord | null>(null)
 
   useEffect(() => {
     fetchFiles()
@@ -254,9 +257,39 @@ export function FileManagementTable() {
     }
   }
 
-  const handleShareFile = (fileId: string) => {
-    // TODO: Implement share functionality
-    alert(`Share file: ${fileId}`)
+  const handleShareFile = (fileId: string, file: FileRecord) => {
+    const foundFile = files.find(f => f.id === fileId)
+    if (foundFile) {
+      setSelectedFileForShare(foundFile)
+      setShareDialogOpen(true)
+    }
+  }
+
+  const handleShareSubmit = async (permissions: Array<{ userId: string; permission: 'view' | 'download' | 'edit' }>) => {
+    if (!selectedFileForShare) return
+
+    try {
+      const response = await fetch(`/api/documents/${selectedFileForShare.id}/share`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ permissions }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to share file' }))
+        throw new Error(errorData.error || 'Failed to share file')
+      }
+
+      alert('File shared successfully!')
+      setSelectedFileForShare(null)
+      setShareDialogOpen(false)
+    } catch (err) {
+      console.error('Share error:', err)
+      throw err
+    }
   }
 
   const handleMoreOptions = (fileId: string) => {
@@ -299,6 +332,18 @@ export function FileManagementTable() {
         <h1 className="text-3xl font-bold text-gray-900">File Management</h1>
         <p className="text-gray-600 mt-2">Manage and track all your documents with role-based access control.</p>
       </div>
+
+      {/* Share Dialog */}
+      <ShareDialog
+        fileId={selectedFileForShare?.id || ''}
+        fileName={selectedFileForShare?.title || ''}
+        isOpen={shareDialogOpen}
+        onClose={() => {
+          setShareDialogOpen(false)
+          setSelectedFileForShare(null)
+        }}
+        onShare={handleShareSubmit}
+      />
 
       {/* Search & Filter */}
       <div className="flex flex-col md:flex-row gap-4">
@@ -407,7 +452,7 @@ export function FileManagementTable() {
                         <Download size={18} className="text-red-700" />
                       </button>
                       <button 
-                        onClick={() => handleShareFile(file.id)}
+                        onClick={() => handleShareFile(file.id, file)}
                         className="p-2 hover:bg-red-50 rounded-lg transition-colors" 
                         title="Share"
                       >
