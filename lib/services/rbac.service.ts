@@ -116,7 +116,7 @@ export class RBACService {
 
     try {
       // Check if role exists
-      const existing = await db.query.rolesTable.findFirst({
+      const existing = await db.query.roles.findFirst({
         where: eq(rolesTable.key, input.key),
       })
 
@@ -197,7 +197,7 @@ export class RBACService {
    */
   static async getRole(roleId: string) {
     try {
-      const role = await db.query.rolesTable.findFirst({
+      const role = await db.query.roles.findFirst({
         where: eq(rolesTable.id, roleId),
       })
 
@@ -229,7 +229,7 @@ export class RBACService {
    */
   static async updateRole(roleId: string, input: UpdateRoleInput) {
     try {
-      const role = await db.query.rolesTable.findFirst({
+      const role = await db.query.roles.findFirst({
         where: eq(rolesTable.id, roleId),
       })
 
@@ -283,7 +283,7 @@ export class RBACService {
   static async assignRoleToUser(userId: string, roleId: string) {
     try {
       // Check role exists
-      const role = await db.query.rolesTable.findFirst({
+      const role = await db.query.roles.findFirst({
         where: eq(rolesTable.id, roleId),
       })
 
@@ -358,25 +358,24 @@ export class RBACService {
    */
   static async userHasPermission(userId: string, permission: Permission): Promise<boolean> {
     try {
-      const result = await db.query.userRoles.findFirst({
-        where: eq(userRoles.userId, userId),
-        with: {
-          role: {
-            with: {
-              rolePermissions: {
-                with: {
-                  permission: true,
-                },
-              },
-            },
-          },
-        },
-      })
+      // Get user's role
+      const userRole = await db
+        .select({ roleId: userRoles.roleId })
+        .from(userRoles)
+        .where(eq(userRoles.userId, userId))
+        .limit(1)
 
-      if (!result) return false
+      if (!userRole || userRole.length === 0) return false
 
-      const userPerms = result.role?.rolePermissions?.map((rp) => rp.permission?.key)
-      return userPerms?.includes(permission) || false
+      // Get all permissions for this role
+      const rolePerms = await db
+        .select({ permissionKey: permissions.key })
+        .from(rolePermissions)
+        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+        .where(eq(rolePermissions.roleId, userRole[0].roleId))
+
+      const permissionKeys = rolePerms.map(p => p.permissionKey)
+      return permissionKeys.includes(permission)
     } catch (err) {
       console.error('[RBACService] Error checking permission:', err)
       return false
