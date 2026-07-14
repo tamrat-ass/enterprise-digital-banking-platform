@@ -1,284 +1,277 @@
-# Fix Preview Not Working - Action Plan
+# 🚀 Fix Preview Issue - Follow These Exact Steps
 
-## The Situation
-
-When you click preview, you see:
-```
-"This document does not have a file attached. Please re-upload the document."
-```
-
-**Root Cause**: `file_path` column in `document_versions` table is **NULL**
+**Status**: Word file still downloading instead of showing PDF  
+**Root Cause**: Need to diagnose (likely API key not loaded)  
+**Time to Fix**: 5-10 minutes  
 
 ---
 
-## Immediate Actions (Do These Now)
+## STEP 1: Completely Restart Dev Server (2 minutes)
 
-### Step 1: Verify Build Passes
-```bash
-npm run build
-# Should complete with no errors
+**THIS IS CRITICAL** - The API key needs to be reloaded.
+
+### On Windows:
+
+```powershell
+# 1. Stop the current dev server
+# Press: Ctrl+C (in the terminal running npm run dev)
+# Wait until it fully stops
+
+# 2. Clear Next.js cache
+Remove-Item -Recurse -Force .next
+
+# 3. Start fresh
+npm run dev
 ```
-✅ Status: **DONE** - Build passing
+
+### What to Watch For:
+
+When the dev server starts, **look at the console output**. You should see:
+
+```
+[PDFConversionService] Initialized
+[PDFConversionService] CloudConvert API Key present: true
+```
+
+**If you see**:
+```
+[PDFConversionService] CloudConvert API Key present: false
+```
+
+→ The API key is not being loaded. See **FIX** section below.
+
+**⏳ Wait** until you see: `✓ Compiled successfully`
 
 ---
 
-### Step 2: Run Diagnostic SQL Query
+## STEP 2: Verify API Configuration (2 minutes)
 
-Connect to PostgreSQL and run:
+Open your browser and go to:
 
-```sql
-SELECT 
-  COUNT(*) as total,
-  SUM(CASE WHEN file_path IS NOT NULL THEN 1 ELSE 0 END) as with_files,
-  SUM(CASE WHEN file_path IS NULL THEN 1 ELSE 0 END) as without_files
-FROM (
-  SELECT DISTINCT ON (d.id) 
-    d.id,
-    dv.file_path
-  FROM documents d
-  LEFT JOIN document_versions dv 
-    ON d.id = dv.document_id
-  ORDER BY d.id, dv.version DESC
-) sub;
+```
+http://localhost:3000/api/admin/test-pdf-conversion
 ```
 
-**What will happen**:
-- Shows how many documents have file_path
-- Shows how many are missing it
+You'll see a JSON response. Check what it says:
 
-**If result shows `without_files = 0`**: All good, problem might be elsewhere
-**If result shows `without_files > 0`**: Found the problem!
+### ✅ If you see "status": "OK":
+```json
+{
+  "status": "OK",
+  "message": "CloudConvert API is working correctly",
+  "account": {
+    "email": "your@email.com"
+  }
+}
+```
+
+→ **Great! API is working. Go to STEP 3.**
+
+### ❌ If you see "status": "ERROR":
+```json
+{
+  "status": "ERROR",
+  "message": "CLOUDCONVERT_API_KEY is not configured"
+}
+```
+
+→ **API key not loaded. Do the FIX below, then go to STEP 3.**
+
+### ❌ If you see "status": "ERROR" with "authentication failed":
+```json
+{
+  "status": "ERROR",
+  "message": "CloudConvert API authentication failed"
+}
+```
+
+→ **API key is invalid. Get a new one (see FIX section), then go to STEP 3.**
 
 ---
 
-### Step 3: Check Physical Files
+## FIX: API Key Not Loading
 
-```bash
-# Windows
-dir D:\enterprise-digital-banking-platform\public\uploads\
+### Check if .env.local exists
 
-# Should list files like:
-# 550e8400-e29b-41d4-a716-446655440000.pdf
-# 6ba7b810-9dad-11d1-80b4-00c04fd430c0.xlsx
+```powershell
+Test-Path .env.local
+# Should show: True
 ```
 
-**If files exist**: Database wasn't updated when files were saved
-**If NO files**: File storage system is not working
-
----
-
-### Step 4: Check Server Logs
-
-Upload a new test file and watch server logs for:
-
-```
-[DocumentService] Saving file for document: {...}
-[DocumentService] File saved successfully at: /uploads/...
-[DocumentService] About to insert document_version with: {filePath: '...', filePathIsNull: false}
-[DocumentService] Document version inserted successfully with filePath: /uploads/...
+If it shows `False`, the file doesn't exist! Create it:
+```powershell
+# Copy the template
+Copy-Item .env.example .env.local
+# Then edit it and add CLOUDCONVERT_API_KEY
 ```
 
-**If you see these logs**: File operations are working, database insert might have an issue
-**If you DON'T see file save logs**: FileStorageService is failing
+### Check if API key is in .env.local
 
----
-
-## Likely Problems & Quick Fixes
-
-### Problem 1: File_Path Column Missing
-
-**Check**:
-```sql
-SELECT column_name FROM information_schema.columns 
-WHERE table_name = 'document_versions' AND column_name = 'file_path';
+```powershell
+Get-Content .env.local | Select-String "CLOUDCONVERT_API_KEY"
+# Should show a line like:
+# CLOUDCONVERT_API_KEY=eyJ0eXA...
 ```
 
-**If empty result**: Column doesn't exist
+If you don't see this line, add it to `.env.local`.
 
-**Fix**:
-```sql
-ALTER TABLE document_versions ADD COLUMN file_path VARCHAR(255);
+### If API Key is Invalid/Expired
+
+Get a new API key:
+1. Go to: https://cloudconvert.com/dashboard/api/keys
+2. Click "Generate New Key"
+3. Copy the new JWT token
+4. Open `.env.local` in your editor
+5. Find: `CLOUDCONVERT_API_KEY=...`
+6. Replace with: `CLOUDCONVERT_API_KEY={your-new-key}`
+7. Save the file
+
+### Restart Dev Server
+
+```powershell
+# Stop: Ctrl+C
+# Wait 2 seconds
+npm run dev
 ```
 
----
-
-### Problem 2: Database Not Updating
-
-**Check Server Logs**: Look for database errors
-
-**Likely Cause**: 
-- Transaction rolling back
-- Constraint violation
-- Connection issue
-
-**Fix**:
-1. Restart database
-2. Check database logs
-3. Re-upload test file
-4. Check logs again
-
----
-
-### Problem 3: File Storage Failing
-
-**Check Server Logs**: Look for "Failed to save file" errors
-
-**Likely Cause**:
-- /public/uploads/ directory doesn't exist
-- No write permissions
-- Disk space issue
-
-**Fix**:
-```bash
-# Create directory
-mkdir D:\enterprise-digital-banking-platform\public\uploads
-
-# Or in PowerShell
-New-Item -ItemType Directory -Path "D:\enterprise-digital-banking-platform\public\uploads" -Force
+Check console for:
+```
+[PDFConversionService] CloudConvert API Key present: true
 ```
 
 ---
 
-### Problem 4: Old Bulk-Uploaded Documents
+## STEP 3: Test Preview (2 minutes)
 
-**Symptoms**: 
-- Documents exist but no files
-- All have NULL file_path
+### 3A. Upload a Word File
 
-**Cause**: Documents uploaded before file storage system
+1. Start dev server (from STEP 1)
+2. Open browser: http://localhost:3000/upload
+3. Click "Choose File"
+4. Select a `.docx` file (small is better, <5MB)
+5. Click Upload
+6. Wait for it to complete
 
-**Action**: 
-- This is expected behavior
-- Show user helpful message (already done ✓)
-- Users re-upload from /upload page
+### 3B. Click Preview
+
+1. Open browser: http://localhost:3000/documents
+2. Find your uploaded document
+3. Click the **eye icon** (Preview button)
+4. **Wait 15-20 seconds** for conversion
+
+### ✅ If Success:
+- PDF opens in browser
+- No download dialog
+- Console shows: `[PDFConversion] CloudConvert conversion successful`
+
+### ❌ If Failure:
+- Error text appears on screen
+- Or file downloads anyway
+- Go to STEP 4 for debugging
 
 ---
 
-## Full Diagnostic Procedure
+## STEP 4: Debug If Still Not Working (5 minutes)
 
-1. **Check database**: Run SQL query (Step 2 above)
-2. **Check files**: Dir command (Step 3 above)
-3. **Check logs**: Upload test file (Step 4 above)
-4. **Identify problem**: Match to "Likely Problems" above
-5. **Apply fix**: Follow corresponding fix
-6. **Verify**: Upload new file and check
-7. **Test preview**: Should now work ✅
+### Check Server Console
 
----
+Look for messages starting with `[PDFConversion]` or `[Preview]`.
 
-## Testing After Fix
+**Copy any error messages you see.**
 
-### Test 1: Upload New File
-```
-1. Go to /upload
-2. Select department/division
-3. Upload test file
-4. Check server logs - should see file saved
-5. Check database - should show file_path
-```
+### Check Browser Network Tab
 
-### Test 2: Check Database
-```sql
-SELECT file_path FROM document_versions 
-ORDER BY created_at DESC LIMIT 1;
--- Should show: /uploads/[uuid].[ext] (NOT NULL)
-```
-
-### Test 3: Check Physical File
-```bash
-ls -la D:\enterprise-digital-banking-platform\public\uploads\[uuid].*
-# Should show file exists
-```
-
-### Test 4: Try Preview
-```
-1. Go to /file-management
-2. Find your test file
+1. Press F12 (open DevTools)
+2. Go to **Network** tab
 3. Click Preview button
-4. Should display file (not error message)
-```
+4. Look for request to `/api/documents/[id]/preview`
+5. Click on it
+6. Check **Response** tab
+
+**What you should see**:
+- Status: 200
+- Content-Type: application/pdf
+- Response body starts with: `%PDF`
+
+**If you see**:
+- Error text instead of PDF data
+- Or error status (400, 401, 500)
+- Copy the full response text
 
 ---
 
-## What I've Already Enhanced
+## Tell Me What You See
 
-✅ **Enhanced Logging** in DocumentService
-- Logs file save start/end
-- Logs file_path value before insert
-- Logs if file save fails
+After following all steps above, tell me:
 
-✅ **Enhanced Logging** in Preview Endpoint
-- Logs file_path value retrieved from database
-- Logs if file_path is NULL
-- Detailed logging for debugging
+1. **Dev server startup** - Did you see:
+   ```
+   [PDFConversionService] CloudConvert API Key present: true
+   ```
+   Or `false`?
 
-✅ **Enhanced Error Handling**
-- Now throws error if file save fails
-- Won't silently create NULL file_path
+2. **API test endpoint** - What did you see:
+   - Status: OK (working)
+   - Status: ERROR with "not configured"
+   - Status: ERROR with "authentication failed"
 
----
+3. **Preview test** - What happened:
+   - PDF displayed ✅
+   - Error text appeared ❌
+   - File downloaded ❌
 
-## Documentation I've Created
+4. **Console error message** - If it failed, copy the exact error from console
 
-| File | Purpose |
-|------|---------|
-| `PREVIEW_NOT_WORKING_DIAGNOSIS.md` | Complete diagnostic guide |
-| `DEBUG_SQL_QUERIES.md` | SQL queries to run |
-| `FIX_PREVIEW_NOW.md` | This file - action plan |
+With this information, I can fix it immediately.
 
 ---
 
-## Quick Reference
-
-**My Hypothesis**: 
-File path is being generated and passed to document version insert, but either:
-1. Column doesn't exist in database
-2. Insert is failing silently
-3. Transaction rolling back
-4. File save is failing (null filePath)
-
-**Most Likely**: Column issue or file save failing
-
-**Action**: 
-1. Run SQL query to check
-2. Check server logs
-3. Check /public/uploads/ directory
-4. Apply corresponding fix
-
----
-
-## Next Steps
+## Quick Checklist
 
 ```
-Step 1: Connect to PostgreSQL
-Step 2: Run diagnostic SQL query
-Step 3: Share results with me
-Step 4: I'll pinpoint exact issue
-Step 5: Apply specific fix
-Step 6: Test and verify
+[ ] Completely restarted dev server (Ctrl+C, then npm run dev)
+[ ] Waited for "✓ Compiled successfully"
+[ ] Tested: http://localhost:3000/api/admin/test-pdf-conversion
+[ ] Uploaded a .docx file to /upload
+[ ] Clicked Preview button
+[ ] Waited 15-20 seconds
+[ ] Checked what happened (PDF? Error? Download?)
+[ ] Copied any error messages from console
 ```
 
----
-
-## Summary
-
-Your preview structure is **architecturally correct** ✅
-
-The issue is that `file_path` is **not being stored** in the database when files are uploaded.
-
-**Why**:
-- File save might be failing
-- Database column might be missing  
-- Insert might be failing
-
-**How to Fix**:
-1. Run SQL diagnostic query
-2. Check what the results show
-3. Apply the corresponding fix
-4. Test new upload
-
-**Timeline**: Should fix in < 15 minutes once you identify the issue
+**If all checked** → You're ready to report!
 
 ---
 
-**Start with Step 1 above and let me know what you find!** 🔍
+## Emergency Support
+
+If you're stuck:
+
+1. **Restart everything**:
+   ```powershell
+   # Stop dev server: Ctrl+C
+   Remove-Item -Recurse -Force .next
+   npm run dev
+   ```
+
+2. **Check basics**:
+   ```powershell
+   # Is .env.local present?
+   Test-Path .env.local
+   
+   # Does it have the API key?
+   Get-Content .env.local | Select-String "CLOUDCONVERT"
+   ```
+
+3. **Test API**:
+   - Go to: http://localhost:3000/api/admin/test-pdf-conversion
+   - Copy what you see
+
+4. **Report**:
+   - Tell me what step you're stuck on
+   - Copy console output
+   - Copy API test response
+
+---
+
+**Next Step**: Follow STEP 1 now! 🚀
