@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { authClient } from "@/lib/auth-client"
+import { authClient, customSignIn } from "@/lib/auth-client"
 import { createProfile } from "@/app/actions/profile"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -71,12 +71,17 @@ export function AuthForm({
         // profile creation failure should not block entry; handled on dashboard
       }
     } else {
-      const { error } = await authClient.signIn.email({ email, password })
-      if (error) {
+      const result = await customSignIn(email, password)
+      if (result.error) {
         setLoading(false)
-        setError(error.message ?? "Invalid email or password")
+        setError(result.error.message || "Invalid email or password")
         return
       }
+      // Sign-in successful
+      setLoading(false)
+      router.push("/")
+      router.refresh()
+      return
     }
 
     setLoading(false)
@@ -194,9 +199,9 @@ export function AuthForm({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-2">
-                    <Label>Role</Label>
+                    <Label htmlFor="role">Role</Label>
                     <Select value={roleId || ""} onValueChange={(v: string | null) => v && setRoleId(v as RoleKey)}>
-                      <SelectTrigger>
+                      <SelectTrigger id="role">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -209,9 +214,9 @@ export function AuthForm({
                     </Select>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label>Department</Label>
+                    <Label htmlFor="department">Department</Label>
                     <Select value={departmentId || ""} onValueChange={(v: string | null) => v && setDepartmentId(v)}>
-                      <SelectTrigger>
+                      <SelectTrigger id="department">
                         <SelectValue placeholder="Select" />
                       </SelectTrigger>
                       <SelectContent>

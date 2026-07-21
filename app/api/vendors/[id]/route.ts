@@ -15,7 +15,7 @@ import {
  */
 export const GET = withErrorHandling(
   async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const { error, user } = await requirePermission(req, "vendors:view")
+    const { error, user } = await requirePermission(req, "vendors.view")
     if (error) return error
 
     const vendor = await VendorService.getVendor(params.id)
@@ -28,7 +28,7 @@ export const GET = withErrorHandling(
  */
 export const PATCH = withErrorHandling(
   async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const { error, user } = await requirePermission(req, "vendors:view")
+    const { error, user } = await requirePermission(req, "vendors.view")
     if (error) return error
 
     const body = await parseJsonBody(req)
@@ -57,7 +57,7 @@ export const PATCH = withErrorHandling(
  */
 export const DELETE = withErrorHandling(
   async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const { error, user } = await requirePermission(req, "vendors:view")
+    const { error, user } = await requirePermission(req, "vendors.view")
     if (error) return error
 
     await VendorService.deleteVendor(params.id, user.id, user.name)

@@ -1,6 +1,6 @@
 /**
  * Role-Based Access Control definitions for the platform.
- * Permissions are namespaced as `<module>:<action>`.
+ * Permissions are namespaced as `<module>.<action>`.
  */
 
 export const MODULES = [
@@ -16,11 +16,14 @@ export const MODULES = [
   "users",
   "audit",
   "analytics",
+  "roles",
+  "categories",
+  "reports",
 ] as const
 
 export type ModuleKey = (typeof MODULES)[number]
 
-export type Permission = `${ModuleKey}:${"view" | "create" | "edit" | "delete" | "approve" | "admin"}`
+export type Permission = `${ModuleKey}.${"view" | "create" | "edit" | "delete" | "approve" | "admin" | "update" | "upload" | "preview" | "download"}`
 
 export type RoleKey =
   | "super_admin"
@@ -52,18 +55,18 @@ export const ROLES: Record<RoleKey, RoleDefinition> = {
     description: "Bank leadership. Read-heavy oversight across all modules plus approvals.",
     level: 90,
     permissions: [
-      "dashboard:view",
-      "documents:view",
-      "workflows:view",
-      "approvals:view",
-      "approvals:approve",
-      "projects:view",
-      "vendors:view",
-      "contracts:view",
-      "risk:view",
-      "compliance:view",
-      "analytics:view",
-      "audit:view",
+      "dashboard.view",
+      "documents.view",
+      "workflows.view",
+      "approvals.view",
+      "approvals.approve",
+      "projects.view",
+      "vendors.view",
+      "contracts.view",
+      "risk.view",
+      "compliance.view",
+      "analytics.view",
+      "audit.view",
     ],
   },
   compliance_officer: {
@@ -72,22 +75,22 @@ export const ROLES: Record<RoleKey, RoleDefinition> = {
     description: "Owns risk, compliance and policy governance across the bank.",
     level: 70,
     permissions: [
-      "dashboard:view",
-      "documents:view",
-      "documents:create",
-      "documents:edit",
-      "approvals:view",
-      "approvals:approve",
-      "risk:view",
-      "risk:create",
-      "risk:edit",
-      "compliance:view",
-      "compliance:create",
-      "compliance:edit",
-      "vendors:view",
-      "contracts:view",
-      "analytics:view",
-      "audit:view",
+      "dashboard.view",
+      "documents.view",
+      "documents.create",
+      "documents.edit",
+      "approvals.view",
+      "approvals.approve",
+      "risk.view",
+      "risk.create",
+      "risk.edit",
+      "compliance.view",
+      "compliance.create",
+      "compliance.edit",
+      "vendors.view",
+      "contracts.view",
+      "analytics.view",
+      "audit.view",
     ],
   },
   auditor: {
@@ -96,17 +99,17 @@ export const ROLES: Record<RoleKey, RoleDefinition> = {
     description: "Read-only access plus full visibility into audit trails.",
     level: 60,
     permissions: [
-      "dashboard:view",
-      "documents:view",
-      "workflows:view",
-      "approvals:view",
-      "projects:view",
-      "vendors:view",
-      "contracts:view",
-      "risk:view",
-      "compliance:view",
-      "audit:view",
-      "analytics:view",
+      "dashboard.view",
+      "documents.view",
+      "workflows.view",
+      "approvals.view",
+      "projects.view",
+      "vendors.view",
+      "contracts.view",
+      "risk.view",
+      "compliance.view",
+      "audit.view",
+      "analytics.view",
     ],
   },
   department_head: {
@@ -115,18 +118,18 @@ export const ROLES: Record<RoleKey, RoleDefinition> = {
     description: "Manages a department's documents, projects and approvals.",
     level: 50,
     permissions: [
-      "dashboard:view",
-      "documents:view",
-      "documents:create",
-      "documents:edit",
-      "approvals:view",
-      "approvals:approve",
-      "projects:view",
-      "projects:create",
-      "projects:edit",
-      "vendors:view",
-      "contracts:view",
-      "risk:view",
+      "dashboard.view",
+      "documents.view",
+      "documents.create",
+      "documents.edit",
+      "approvals.view",
+      "approvals.approve",
+      "projects.view",
+      "projects.create",
+      "projects.edit",
+      "vendors.view",
+      "contracts.view",
+      "risk.view",
     ],
   },
   staff: {
@@ -135,11 +138,11 @@ export const ROLES: Record<RoleKey, RoleDefinition> = {
     description: "Day-to-day contributor. Creates documents and submits requests.",
     level: 10,
     permissions: [
-      "dashboard:view",
-      "documents:view",
-      "documents:create",
-      "approvals:view",
-      "projects:view",
+      "dashboard.view",
+      "documents.view",
+      "documents.create",
+      "approvals.view",
+      "projects.view",
     ],
   },
 }
@@ -157,5 +160,5 @@ export function canAccessModule(
   moduleKey: ModuleKey,
 ): boolean {
   if (!rolePermissions) return false
-  return rolePermissions.some((p) => p.startsWith(`${moduleKey}:`))
+  return rolePermissions.some((p) => p.startsWith(`${moduleKey}.`))
 }

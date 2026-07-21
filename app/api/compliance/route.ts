@@ -15,7 +15,7 @@ import {
  * List compliance items
  */
 export const GET = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "compliance:view")
+  const { error, user } = await requirePermission(req, "compliance.view")
   if (error) return error
 
   const page = parseInt(req.nextUrl.searchParams.get("page") || "1")
@@ -36,7 +36,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
  * Create a new compliance item
  */
 export const POST = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "compliance:create")
+  const { error, user } = await requirePermission(req, "compliance.create")
   if (error) return error
 
   const body = await parseJsonBody(req)
@@ -56,3 +56,4 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
   return successResponse(item, 201)
 })
+

@@ -18,7 +18,7 @@ import { eq } from "drizzle-orm"
 export const GET = withErrorHandling(async (req: NextRequest) => {
   console.log('[Departments API] GET request received')
   
-  const { error, user } = await requirePermission(req, "documents:view")
+  const { error, user } = await requirePermission(req, "documents.view")
   if (error) {
     console.log('[Departments API] Permission denied')
     return error
@@ -70,7 +70,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
  * Create a new department with optional divisions
  */
 export const POST = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "documents:admin")
+  const { error, user } = await requirePermission(req, "documents.admin")
   if (error) return error
 
   const body = await parseJsonBody(req)
@@ -136,3 +136,4 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     return errorResponse('Failed to create department', 500)
   }
 })
+

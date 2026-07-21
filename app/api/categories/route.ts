@@ -1,22 +1,44 @@
 import { NextRequest } from "next/server"
+import { getCurrentUser } from "@/lib/session"
 import { db } from "@/lib/db"
 import { documentCategories } from "@/lib/db/schema"
 import {
-  requirePermission,
   successResponse,
   errorResponse,
   parseJsonBody,
   withErrorHandling,
+  requirePermission,
 } from "@/lib/api-utils"
 import { eq } from "drizzle-orm"
 
 /**
  * GET /api/categories
  * List all document categories
+ * 
+ * Users can view categories if they have ANY of these permissions:
+ * - categories.view
+ * - categories.create
+ * - categories.update
  */
 export const GET = withErrorHandling(async (req: NextRequest) => {
-  const { error } = await requirePermission(req, "documents:view")
-  if (error) return error
+  const currentUser = await getCurrentUser()
+  
+  if (!currentUser) {
+    return errorResponse("Unauthorized", 401)
+  }
+
+  // Check if user has permission to view OR manage categories
+  const hasPermission = currentUser.permissions.some(p => 
+    p === "categories.view" || 
+    p === "categories.create" || 
+    p === "categories.update" ||
+    p === "categories.delete"
+  )
+
+  if (!hasPermission) {
+    console.warn(`[Categories API] Access denied: user "${currentUser.name}" missing category permissions. Has permissions: ${currentUser.permissions.join(", ")}`)
+    return errorResponse("Forbidden: Insufficient permissions", 403)
+  }
 
   try {
     const categories = await db
@@ -131,7 +153,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
  * Create a new category
  */
 export const POST = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "documents:admin")
+  const { error, user } = await requirePermission(req, "categories.create")
   if (error) return error
 
   const body = await parseJsonBody(req)
@@ -176,3 +198,4 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     return errorResponse('Failed to create category', 500)
   }
 })
+

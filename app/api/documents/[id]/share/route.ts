@@ -121,7 +121,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requirePermission(req, "documents:view")
+  const { error } = await requirePermission(req, "documents.view")
   if (error) return error
 
   const { id: documentId } = await params
@@ -161,7 +161,7 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error } = await requirePermission(req, "documents:share")
+  const { error } = await requirePermission(req, "documents.share")
   if (error) return error
 
   const { id: documentId } = await params

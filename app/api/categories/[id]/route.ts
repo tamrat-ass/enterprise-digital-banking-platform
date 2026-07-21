@@ -15,7 +15,7 @@ import { eq } from "drizzle-orm"
  * Get a specific category
  */
 export const GET = withErrorHandling(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const { error } = await requirePermission(req, "documents:view")
+  const { error } = await requirePermission(req, "categories.view")
   if (error) return error
 
   const { id } = await params
@@ -45,7 +45,7 @@ export const GET = withErrorHandling(async (req: NextRequest, { params }: { para
  * Update a category
  */
 export const PUT = withErrorHandling(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const { error } = await requirePermission(req, "documents:admin")
+  const { error } = await requirePermission(req, "categories.update")
   if (error) return error
 
   const { id } = await params
@@ -109,7 +109,7 @@ export const PUT = withErrorHandling(async (req: NextRequest, { params }: { para
  * Delete a category (soft delete - mark as inactive)
  */
 export const DELETE = withErrorHandling(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const { error } = await requirePermission(req, "documents:admin")
+  const { error } = await requirePermission(req, "categories.delete")
   if (error) return error
 
   const { id } = await params

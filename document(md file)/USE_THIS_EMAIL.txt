@@ -1,0 +1,81 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║                    🧪 TEST WITH A UNIQUE EMAIL                               ║
+║                                                                               ║
+║        tamrat.assu23@gmail.com ALREADY EXISTS in the database                 ║
+║                                                                               ║
+║        Use one of these emails instead:                                       ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+
+RECOMMENDED TEST EMAILS (Use Any One):
+──────────────────────────────────────
+
+✅ tamrat.test1@gmail.com
+✅ tamrat.test2@gmail.com
+✅ tamrat.test3@gmail.com
+✅ tamrat.newuser@gmail.com
+✅ tamrat.testing@gmail.com
+✅ test.tamrat@gmail.com
+
+
+HOW TO CREATE TEST USER:
+─────────────────────────
+
+1. Go to: http://localhost:3000/admin/users
+
+2. Click: "Add New User"
+
+3. Fill:
+   Name: Tamrat Test User
+   Email: tamrat.test1@gmail.com  ← Use ONE of the emails above
+
+4. Click: "Create User"
+
+5. Check: Email inbox for invitation
+
+
+WHAT TO EXPECT:
+────────────────
+
+✅ User created successfully
+✅ Message: "Invitation email sent"
+✅ User appears in list with status "invited"
+✅ Email arrives in inbox within 10 seconds
+
+
+CHECK YOUR EMAIL:
+──────────────────
+
+If you used: tamrat.test1@gmail.com
+
+Then check inbox for:
+  From: Enterprise Banking Platform <noreply@ahadubank.com>
+  Subject: Welcome to Enterprise Banking Platform
+  Body: Professional HTML with activation button
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Why 409 Error?
+──────────────
+
+409 Conflict = Email already exists in database
+
+Solution: Use different email
+
+System already has:
+  • tamrat.assu23@gmail.com
+  • 7 other users
+
+Use fresh email like: tamrat.test1@gmail.com
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+                    Use THIS EMAIL: tamrat.test1@gmail.com
+
+                    ✅ This one should work!
+
+═══════════════════════════════════════════════════════════════════════════════

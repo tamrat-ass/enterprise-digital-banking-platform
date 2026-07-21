@@ -1,0 +1,148 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║                      🧪 TEST USER REGISTRATION                               ║
+║                                                                               ║
+║           Create test user and verify email is delivered                      ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+
+YOUR TEST EMAIL:
+────────────────
+
+  tamrat.assu23@gmail.com
+
+
+STEP 1: OPEN ADMIN USERS PAGE
+──────────────────────────────
+
+  Go to: http://localhost:3000/admin/users
+
+
+STEP 2: CREATE NEW USER
+────────────────────────
+
+  Click: "Add New User" button
+
+  Fill form:
+    Name:  Tamrat Test User
+    Email: tamrat.assu23@gmail.com
+
+  Click: "Create User" button
+
+
+STEP 3: VERIFY USER CREATED
+─────────────────────────────
+
+  You should see:
+    ✅ Success message: "Invitation email sent"
+    ✅ New user in the list
+    ✅ Status: "invited"
+
+
+STEP 4: CHECK EMAIL INBOX
+──────────────────────────
+
+  Go to: tamrat.assu23@gmail.com inbox
+  
+  Look for:
+    From: Enterprise Banking Platform <noreply@ahadubank.com>
+    Subject: Welcome to Enterprise Banking Platform
+    
+  If not in inbox:
+    ✅ Check Spam folder
+    ✅ Check All Mail folder
+
+
+STEP 5: VERIFY EMAIL CONTENTS
+────────────────────────────────
+
+  Email should contain:
+    ✅ Your name: "Tamrat Test User"
+    ✅ Professional HTML design
+    ✅ "Activate Your Account" button/link
+    ✅ Security notice: "Link expires in 24 hours"
+    ✅ Company branding
+
+
+STEP 6: (OPTIONAL) TEST ACTIVATION
+──────────────────────────────────
+
+  Click: Activation link in email
+  
+  On the form:
+    - Set password
+    - Confirm password
+    - Click "Set Password & Activate"
+  
+  Try to log in with:
+    Email: tamrat.assu23@gmail.com
+    Password: (the one you just set)
+
+
+EXPECTED RESULTS:
+──────────────────
+
+  ✅ User created in database
+  ✅ User status: "invited"
+  ✅ Email sent successfully
+  ✅ Email received in inbox
+  ✅ User can click link and set password
+  ✅ User can log in
+  ✅ User account becomes "active"
+
+
+CONSOLE VERIFICATION:
+──────────────────────
+
+  While creating user, dev server should show:
+
+  ✅ [Users API] Created new user: user_xxx
+  ✅ [Users API] 📧 Sending invitation email...
+  ✅ [Email Service] ✅ Email sent successfully!
+  ✅ POST /api/users 201
+
+
+WHAT IF EMAIL DOESN'T ARRIVE?
+───────────────────────────────
+
+  1. Check Spam folder
+  2. Check All Mail folder
+  3. Verify email spelling: tamrat.assu23@gmail.com
+  4. Check dev console for [Email Service] errors
+  5. Wait 1-2 minutes (sometimes takes time)
+  6. Try creating another user
+
+
+WHAT IF EMAIL ARRIVES? ✅
+──────────────────────────
+
+  🎉 EMAIL SYSTEM IS WORKING!
+
+  You can now:
+    ✅ Create unlimited users
+    ✅ All receive invitations
+    ✅ Users complete onboarding
+    ✅ System is production-ready
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+                    👉 DO THIS RIGHT NOW:
+
+        1. Go to: http://localhost:3000/admin/users
+        2. Click: "Add New User"
+        3. Fill: Name = "Tamrat Test User"
+                Email = "tamrat.assu23@gmail.com"
+        4. Click: "Create User"
+        5. Check: tamrat.assu23@gmail.com inbox
+
+                        ⏱️ Takes 2-3 minutes
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Email Target:  tamrat.assu23@gmail.com
+Status:        🟢 System ready to test
+Expected:      ✅ Email arrives in inbox within 10 seconds
+
+See: TEST_USER_CREATION.md for detailed instructions

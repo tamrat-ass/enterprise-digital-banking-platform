@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { DivisionsManager } from './divisions-manager'
+import { logger } from '@/lib/logger'
 
 interface Department {
   id: string
@@ -91,20 +92,20 @@ export function DepartmentsManager() {
   const fetchDepartments = async () => {
     try {
       setLoading(true)
-      console.log('[DepartmentsManager] Fetching departments...')
+      logger.debug('[DepartmentsManager] Fetching departments...')
       const response = await fetch('/api/departments', {
         credentials: 'include',
       })
-      console.log('[DepartmentsManager] Response status:', response.status)
+      logger.debug('[DepartmentsManager] Response status:', response.status)
 
       if (!response.ok) {
         const errorData = await response.text()
-        console.error('[DepartmentsManager] API error:', response.status, errorData)
+        logger.error('[DepartmentsManager] API error:', response.status, errorData)
         throw new Error(`Failed to fetch departments: ${response.status}`)
       }
 
       const json = await response.json()
-      console.log('[DepartmentsManager] Full response:', JSON.stringify(json, null, 2))
+      logger.debug('[DepartmentsManager] Full response:', JSON.stringify(json, null, 2))
 
       // Extract departments from response
       let deptList = []
@@ -114,19 +115,19 @@ export function DepartmentsManager() {
         // If data is an array
         if (Array.isArray(json.data)) {
           deptList = json.data
-          console.log('[DepartmentsManager] Found array in json.data')
+          logger.debug('[DepartmentsManager] Found array in json.data')
         }
         // If data is an object with a data property that's an array
         else if (json.data.data && Array.isArray(json.data.data)) {
           deptList = json.data.data
-          console.log('[DepartmentsManager] Found nested array in json.data.data')
+          logger.debug('[DepartmentsManager] Found nested array in json.data.data')
         }
       }
 
-      console.log('[DepartmentsManager] Extracted departments:', deptList.length, deptList)
+      logger.debug('[DepartmentsManager] Extracted departments:', deptList.length, deptList)
 
       if (!Array.isArray(deptList)) {
-        console.warn('[DepartmentsManager] Departments is not an array, setting to empty')
+        logger.warn('[DepartmentsManager] Departments is not an array, setting to empty')
         deptList = []
       }
 
@@ -134,7 +135,7 @@ export function DepartmentsManager() {
       setError(null)
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load departments'
-      console.error('[DepartmentsManager] Error:', errorMsg, err)
+      logger.error('[DepartmentsManager] Error:', errorMsg, err)
       setError(errorMsg)
       setDepartments([])
     } finally {

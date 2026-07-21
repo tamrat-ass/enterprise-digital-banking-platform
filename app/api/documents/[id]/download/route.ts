@@ -35,7 +35,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error } = await requirePermission(req, "documents:view")
+    const { error } = await requirePermission(req, "documents.view")
     if (error) return error
 
     const params = await context.params

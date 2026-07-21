@@ -20,7 +20,7 @@ export async function GET(
   try {
     const { error, user } = await requirePermission(
       req,
-      "documents:view",
+      "documents.view",
     )
     if (error) return error
 
@@ -44,7 +44,7 @@ export async function PATCH(
   try {
     const { error, user } = await requirePermission(
       req,
-      "documents:edit",
+      "documents.update",
     )
     if (error) return error
 

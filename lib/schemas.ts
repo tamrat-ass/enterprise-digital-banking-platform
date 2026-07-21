@@ -27,6 +27,7 @@ export const documentFilterSchema = z.object({
   search: z.string().optional(),
   page: z.number().default(1),
   limit: z.number().default(10),
+  uploadedBy: z.string().optional(), // Filter by user who uploaded the document
 })
 
 /* ================================================================ */

@@ -18,7 +18,7 @@ export const GET = withErrorHandling(async (
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) => {
-  const { error } = await requirePermission(req, "documents:view")
+  const { error } = await requirePermission(req, "documents.view")
   if (error) return error
 
   const params = await context.params
@@ -50,7 +50,7 @@ export const PUT = withErrorHandling(async (
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) => {
-  const { error, user } = await requirePermission(req, "documents:admin")
+  const { error, user } = await requirePermission(req, "departments.update")
   if (error) return error
 
   const params = await context.params
@@ -108,7 +108,7 @@ export const DELETE = withErrorHandling(async (
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) => {
-  const { error, user } = await requirePermission(req, "documents:admin")
+  const { error, user } = await requirePermission(req, "departments.delete")
   if (error) return error
 
   const params = await context.params

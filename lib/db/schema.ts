@@ -20,6 +20,16 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("emailVerified").notNull().default(false),
   image: text("image"),
+  // Invitation-based account creation
+  status: text("status").notNull().default("invited"), // "invited" | "active" | "disabled"
+  invitationToken: text("invitationToken").unique(), // Token for accepting invitation
+  invitationExpiresAt: timestamp("invitationExpiresAt"), // When invitation expires
+  passwordHash: text("passwordHash"), // Argon2/Bcrypt hash (null until user sets password)
+  requirePasswordChange: boolean("requirePasswordChange").default(false), // Force password change on next login
+  passwordChangedAt: timestamp("passwordChangedAt"), // When password was last changed
+  passwordResetToken: text("passwordResetToken").unique(), // For password reset flow
+  passwordResetExpiresAt: timestamp("passwordResetExpiresAt"), // When reset token expires
+  pin: text("pin"), // User's 4-6 digit PIN (should be encrypted in production)
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt").notNull().defaultNow(),
 })
@@ -106,9 +116,7 @@ export const documentCategories = pgTable("document_categories", {
 export const roles = pgTable("roles", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  key: text("key").notNull().unique(), // super_admin, executive, etc.
   description: text("description"),
-  level: integer("level").notNull().default(1), // For hierarchy
   isSystem: boolean("is_system").notNull().default(false), // Can't be deleted
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -117,11 +125,10 @@ export const roles = pgTable("roles", {
 
 export const permissions = pgTable("permissions", {
   id: text("id").primaryKey(),
-  key: text("key").notNull().unique(), // "documents:view", "documents:create", etc.
-  name: text("name").notNull(),
+  module: text("module").notNull(), // "users", "documents", "approvals", etc.
+  permissionKey: text("permission_key").notNull(), // "create", "view", "update", "delete", "approve"
+  permissionName: text("permission_name").notNull(), // "Create Users", "View Documents", etc.
   description: text("description"),
-  module: text("module").notNull(), // "documents", "approvals", etc.
-  action: text("action").notNull(), // "view", "create", "edit", "delete", etc.
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 

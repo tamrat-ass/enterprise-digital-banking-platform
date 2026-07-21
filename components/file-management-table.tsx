@@ -17,6 +17,7 @@ import {
 import { useDocumentRefresh } from '@/lib/contexts/document-refresh'
 import { fetchDocuments } from '@/app/actions/documents'
 import { ShareDialog } from './share-dialog'
+import { logger } from '@/lib/logger'
 
 interface FileRecord {
   id: string
@@ -99,7 +100,7 @@ export function FileManagementTable() {
     try {
       setLoading(true)
       
-      console.log('[FileManagementTable] Calling server action to fetch documents')
+      logger.debug('[FileManagementTable] Calling server action to fetch documents')
       const result = await fetchDocuments({
         page,
         limit: 20,
@@ -116,7 +117,7 @@ export function FileManagementTable() {
       }
       
       const filesList = result.data || []
-      console.log('[FileManagementTable] Files from server action:', filesList)
+      logger.debug('[FileManagementTable] Files from server action:', filesList)
       
       // Fetch division names for files that have divisionId
       const filesWithDivisions = await Promise.all(
@@ -358,21 +359,6 @@ export function FileManagementTable() {
               className="w-full pl-10 pr-4 py-2 border border-[#E6E6E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6B4423]"
             />
           </div>
-        </div>
-        <div className="flex gap-2">
-          {['draft', 'pending_approval', 'approved', 'archived'].map(status => (
-            <button
-              key={status}
-              onClick={() => setFilterStatus(filterStatus === status ? null : status)}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                filterStatus === status
-                  ? 'bg-[#6B4423] text-white'
-                  : 'bg-[#F5F5F5] text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {status.split('_').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')}
-            </button>
-          ))}
         </div>
       </div>
 

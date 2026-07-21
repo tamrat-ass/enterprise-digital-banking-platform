@@ -148,7 +148,7 @@ export class DocumentService {
       INSERT INTO documents 
         (id, title, description, category, department_id, division_id, status, current_version, tags, owner_id, owner_name, access_level, expiry_date)
       VALUES 
-        (${documentId}, ${input.title}, ${input.description || null}, ${input.category}, ${input.departmentId || null}, ${fileMetadata?.divisionId || null}, 'draft', 1, ${JSON.stringify(input.tags || [])}, ${userId}, ${userName}, ${input.accessLevel || 'internal'}, ${input.expiryDate || null})
+        (${documentId}, ${input.title}, ${input.description || null}, ${input.category}, ${input.departmentId || null}, ${fileMetadata?.divisionId || null}, 'approved', 1, ${JSON.stringify(input.tags || [])}, ${userId}, ${userName}, ${input.accessLevel || 'internal'}, ${input.expiryDate || null})
     `)
 
     console.log('[DocumentService] Document inserted with divisionId:', fileMetadata?.divisionId)
@@ -380,6 +380,7 @@ export class DocumentService {
       search,
       page = 1,
       limit = 20,
+      uploadedBy, // NEW: Filter by user who uploaded the document (uses ownerId field)
     } = filters
     const offset = (page - 1) * limit
 
@@ -393,6 +394,9 @@ export class DocumentService {
       whereConditions.push(
         ilike(documents.title, `%${search}%`)
       )
+    // NEW: Filter by owner ID (for My Files functionality)
+    if (uploadedBy)
+      whereConditions.push(eq(documents.ownerId, uploadedBy))
 
     const where = whereConditions.length
       ? and(...whereConditions)

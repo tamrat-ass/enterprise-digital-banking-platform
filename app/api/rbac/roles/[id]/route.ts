@@ -8,7 +8,7 @@ import { requirePermission, successResponse, errorResponse, withErrorHandling } 
  */
 export const GET = withErrorHandling(
   async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-    const { error } = await requirePermission(req, "users:view")
+    const { error } = await requirePermission(req, "users.view")
     if (error) return error
 
     const { id } = await params
@@ -29,19 +29,18 @@ export const GET = withErrorHandling(
  */
 export const PATCH = withErrorHandling(
   async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-    const { error } = await requirePermission(req, "users:admin")
+    const { error } = await requirePermission(req, "users.update")
     if (error) return error
 
     const { id } = await params
 
     try {
       const body = await req.json()
-      const { name, description, level, permissionIds } = body
+      const { name, description, permissionIds } = body
 
       const role = await RBACService.updateRole(id, {
         name,
         description,
-        level,
         permissionIds,
       })
 
@@ -49,6 +48,47 @@ export const PATCH = withErrorHandling(
     } catch (err) {
       console.error('[Role Details API] Error updating role:', err)
       return errorResponse(err instanceof Error ? err.message : 'Failed to update role', 500)
+    }
+  }
+)
+
+/**
+ * DELETE /api/rbac/roles/[id]
+ * Delete a role
+ */
+export const DELETE = withErrorHandling(
+  async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { error } = await requirePermission(req, "users.delete")
+    if (error) return error
+
+    const { id } = await params
+
+    try {
+      const { db } = await import("@/lib/db")
+      const { roles: rolesTable, rolePermissions, userRoles } = await import("@/lib/db/schema")
+      const { eq } = await import("drizzle-orm")
+
+      // Check if role exists
+      const roleList = await db.select().from(rolesTable).where(eq(rolesTable.id, id))
+      const role = roleList[0]
+
+      if (!role) {
+        return errorResponse('Role not found', 404)
+      }
+
+      if (role.isSystem) {
+        return errorResponse('Cannot delete system roles', 403)
+      }
+
+      // Delete role permissions and user roles (cascade handled by DB)
+      await db.delete(rolePermissions).where(eq(rolePermissions.roleId, id))
+      await db.delete(userRoles).where(eq(userRoles.roleId, id))
+      await db.delete(rolesTable).where(eq(rolesTable.id, id))
+
+      return successResponse({ success: true, id })
+    } catch (err) {
+      console.error('[Role Details API] Error deleting role:', err)
+      return errorResponse(err instanceof Error ? err.message : 'Failed to delete role', 500)
     }
   }
 )

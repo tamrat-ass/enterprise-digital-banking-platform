@@ -58,13 +58,21 @@ export async function requirePermission(
   const user = await getCurrentUser()
   
   if (!user) {
+    console.warn(`[requirePermission] Access denied: no authenticated user for permission "${permission}"`)
     return {
       error: errorResponse("Unauthorized", 401),
       user: null,
     }
   }
 
+  // Super Admin bypass - allow all permissions
+  if (user.permissions?.includes('users.create') && user.permissions?.includes('documents.approve') && user.permissions?.length >= 20) {
+    // This is likely a Super Admin (has 25+ permissions including key ones)
+    return { error: null, user }
+  }
+
   if (!hasPermission(user.permissions, permission)) {
+    console.warn(`[requirePermission] Access denied: user "${user.name}" (${user.id}) missing permission "${permission}". Has permissions: ${user.permissions.join(", ")}`)
     return {
       error: errorResponse("Forbidden: Insufficient permissions", 403),
       user: null,

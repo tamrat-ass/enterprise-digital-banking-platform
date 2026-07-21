@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Upload, FileText, X, CheckCircle2, AlertCircle, Loader, Building2, GitBranch, FolderOpen, Tag } from 'lucide-react'
 import { useDocumentRefresh } from '@/lib/contexts/document-refresh'
+import { logger } from '@/lib/logger'
 
 interface UploadFile {
   id: string
@@ -54,68 +55,65 @@ export function FileUploadForm() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragRef = useRef<HTMLDivElement>(null)
 
-  // Fetch departments and categories on mount
+  // Fetch departments and categories on mount (OPTIMIZED: parallel fetching)
   useEffect(() => {
+    let isMounted = true
+
     const fetchData = async () => {
       try {
-        setLoadingDepts(true)
-        const deptResponse = await fetch('/api/departments', {
-          credentials: 'include',
-        })
-        console.log('[FileUploadForm] Departments API response:', deptResponse.status, deptResponse.ok)
-        if (deptResponse.ok) {
-          const json = await deptResponse.json()
-          console.log('[FileUploadForm] Departments data:', json)
-          const deptList = json.data?.data || json.data || []
-          console.log('[FileUploadForm] Departments list:', deptList)
-          setDepartments(Array.isArray(deptList) ? deptList : [])
-          if (Array.isArray(deptList) && deptList.length > 0) {
-            console.log('[FileUploadForm] Setting default dept:', deptList[0].id)
-            setFormData(prev => ({ ...prev, departmentId: deptList[0].id }))
-            // Fetch divisions for the first department
-            await fetchDivisionsForDepartment(deptList[0].id)
-          }
-        } else {
-          console.error('[FileUploadForm] Failed to fetch departments:', deptResponse.status)
-        }
-      } catch (err) {
-        console.error('Failed to fetch departments:', err)
-      } finally {
-        setLoadingDepts(false)
-      }
+        // OPTIMIZATION: Fetch in parallel instead of sequential
+        const [deptResponse, catResponse] = await Promise.all([
+          fetch('/api/departments', { credentials: 'include' }),
+          fetch('/api/categories', { credentials: 'include' }),
+        ])
 
-      try {
-        setLoadingCats(true)
-        const catResponse = await fetch('/api/categories', {
-          credentials: 'include',
-        })
-        console.log('[FileUploadForm] Categories API response:', catResponse.status, catResponse.ok)
-        if (catResponse.ok) {
-          const json = await catResponse.json()
-          console.log('[FileUploadForm] Categories data:', json)
-          const catList = json.data?.data || json.data || []
-          console.log('[FileUploadForm] Categories list:', catList)
-          setCategories(Array.isArray(catList) ? catList : [])
-          if (Array.isArray(catList) && catList.length > 0) {
-            console.log('[FileUploadForm] Setting default category:', catList[0].id)
-            setFormData(prev => ({ ...prev, categoryId: catList[0].id }))
+        if (!isMounted) return
+
+        // Process departments
+        if (deptResponse.ok) {
+          const deptList = (await deptResponse.json()).data?.data || []
+          if (isMounted) {
+            setDepartments(Array.isArray(deptList) ? deptList : [])
+            if (Array.isArray(deptList) && deptList.length > 0) {
+              setFormData(prev => ({ ...prev, departmentId: deptList[0].id }))
+              // Fetch divisions for selected department
+              await fetchDivisionsForDepartment(deptList[0].id)
+            }
           }
-        } else {
-          console.error('[FileUploadForm] Failed to fetch categories:', catResponse.status)
         }
-      } catch (err) {
-        console.error('Failed to fetch categories:', err)
-      } finally {
+        setLoadingDepts(false)
+
+        // Process categories
+        if (catResponse.ok) {
+          const catList = (await catResponse.json()).data?.data || []
+          if (isMounted) {
+            setCategories(Array.isArray(catList) ? catList : [])
+            if (Array.isArray(catList) && catList.length > 0) {
+              setFormData(prev => ({ ...prev, categoryId: catList[0].id }))
+            }
+          }
+        }
         setLoadingCats(false)
+      } catch (err) {
+        if (isMounted) {
+          logger.error('Failed to fetch form data:', err)
+          setLoadingDepts(false)
+          setLoadingCats(false)
+        }
       }
     }
+
     fetchData()
+
+    // CLEANUP: Prevent state updates after unmount
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   // Fetch divisions when department changes
   const fetchDivisionsForDepartment = async (departmentId: string) => {
     if (!departmentId) {
-      console.log('[FileUploadForm] No department ID, clearing divisions')
       setDivisions([])
       setFormData(prev => ({ ...prev, divisionId: '' }))
       return
@@ -123,30 +121,22 @@ export function FileUploadForm() {
 
     try {
       setLoadingDivs(true)
-      console.log('[FileUploadForm] Fetching divisions for dept:', departmentId)
       const response = await fetch(`/api/divisions?departmentId=${departmentId}`, {
         credentials: 'include',
       })
-      console.log('[FileUploadForm] Divisions API response:', response.status, response.ok)
       if (response.ok) {
-        const json = await response.json()
-        console.log('[FileUploadForm] Divisions response:', json)
-        const divList = json.data?.data || json.data || []
-        console.log('[FileUploadForm] Divisions list:', divList)
+        const divList = (await response.json()).data?.data || []
         setDivisions(Array.isArray(divList) ? divList : [])
         if (Array.isArray(divList) && divList.length > 0) {
-          console.log('[FileUploadForm] Setting default division:', divList[0].id)
           setFormData(prev => ({ ...prev, divisionId: divList[0].id }))
         } else {
-          console.log('[FileUploadForm] No divisions found, clearing selection')
           setFormData(prev => ({ ...prev, divisionId: '' }))
         }
       } else {
-        console.error('[FileUploadForm] Failed to fetch divisions:', response.status)
         setDivisions([])
       }
     } catch (err) {
-      console.error('Failed to fetch divisions:', err)
+      logger.error('Failed to fetch divisions:', err)
       setDivisions([])
     } finally {
       setLoadingDivs(false)
@@ -250,27 +240,12 @@ export function FileUploadForm() {
         formDataToSend.append('departmentId', formData.departmentId || '')
         formDataToSend.append('divisionId', formData.divisionId || '')
 
-        console.log('[FileUploadForm] Form data to send:', {
+        logger.debug('[FileUploadForm] Form data to send:', {
           title: formData.title,
           category: categoryName,
           departmentId: formData.departmentId,
           divisionId: formData.divisionId,
           fileName: file.name,
-        })
-
-        console.log('[FileUploadForm] FormData entries:')
-        for (const [key, value] of formDataToSend.entries()) {
-          if (key !== 'file') {
-            console.log(`  ${key}: ${value}`)
-          }
-        }
-
-        console.log('[FileUploadForm] Uploading file:', {
-          fileName: file.name,
-          size: file.size,
-          type: file.type,
-          departmentId: formData.departmentId,
-          divisionId: formData.divisionId,
         })
 
         const response = await fetch('/api/documents', {
@@ -280,8 +255,7 @@ export function FileUploadForm() {
         })
 
         const responseText = await response.text()
-        console.log('[FileUploadForm] Upload response status:', response.status)
-        console.log('[FileUploadForm] Upload response body:', responseText)
+        logger.debug('[FileUploadForm] Upload response status:', response.status)
 
         let responseData
         try {
@@ -292,7 +266,7 @@ export function FileUploadForm() {
 
         if (!response.ok) {
           const errorMsg = responseData.message || responseData.error || responseData.errors || `Failed to upload (${response.status})`
-          console.error('Upload failed with:', errorMsg)
+          logger.error('Upload failed with:', errorMsg)
           throw new Error(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg))
         }
       }
@@ -311,7 +285,7 @@ export function FileUploadForm() {
       // Auto-hide message after 5 seconds
       setTimeout(() => setUploadMessage(null), 5000)
     } catch (err) {
-      console.error('Upload error:', err)
+      logger.error('Upload error:', err)
       setUploadMessage({ type: 'error', text: err instanceof Error ? err.message : 'Upload failed' })
     } finally {
       setUploading(false)
@@ -400,12 +374,13 @@ export function FileUploadForm() {
             <div className="lg:col-span-2 space-y-4">
               {/* Document Title */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="document-title" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
                   <Tag size={18} className="text-red-700" />
                   Document Title
                   <span className="text-red-600">*</span>
                 </label>
                 <input
+                  id="document-title"
                   type="text"
                   placeholder="e.g., Q4 Financial Report"
                   required
@@ -417,7 +392,7 @@ export function FileUploadForm() {
 
               {/* Category */}
               <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                <label htmlFor="category-select" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
                   <FolderOpen size={18} className="text-red-700" />
                   Category
                   <span className="text-red-600">*</span>
@@ -429,6 +404,7 @@ export function FileUploadForm() {
                   </div>
                 ) : categories.length > 0 ? (
                   <select
+                    id="category-select"
                     required
                     value={formData.categoryId}
                     onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
@@ -450,7 +426,7 @@ export function FileUploadForm() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Department */}
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                  <label htmlFor="department-select" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
                     <Building2 size={18} className="text-red-700" />
                     Department
                     <span className="text-red-600">*</span>
@@ -462,6 +438,7 @@ export function FileUploadForm() {
                     </div>
                   ) : departments.length > 0 ? (
                     <select
+                      id="department-select"
                       required
                       value={formData.departmentId}
                       onChange={handleDepartmentChange}
@@ -481,7 +458,7 @@ export function FileUploadForm() {
 
                 {/* Division */}
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
+                  <label htmlFor="division-select" className="flex items-center gap-2 text-sm font-semibold text-gray-900 mb-2">
                     <GitBranch size={18} className="text-red-700" />
                     Division
                     <span className="text-red-600">{formData.departmentId ? '*' : ''}</span>
@@ -493,6 +470,7 @@ export function FileUploadForm() {
                     </div>
                   ) : divisions.length > 0 ? (
                     <select
+                      id="division-select"
                       required
                       value={formData.divisionId}
                       onChange={(e) => setFormData({ ...formData, divisionId: e.target.value })}

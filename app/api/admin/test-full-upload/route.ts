@@ -82,3 +82,4 @@ export async function GET(req: NextRequest) {
     endpoint: 'POST /api/admin/test-full-upload',
   })
 }
+

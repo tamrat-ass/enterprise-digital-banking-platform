@@ -18,7 +18,7 @@ import { eq } from "drizzle-orm"
 export const GET = withErrorHandling(async (req: NextRequest) => {
   console.log('[Divisions API] GET request received')
   
-  const { error, user } = await requirePermission(req, "documents:view")
+  const { error, user } = await requirePermission(req, "documents.view")
   if (error) {
     console.log('[Divisions API] Permission denied')
     return error
@@ -74,7 +74,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
  * Create a new division
  */
 export const POST = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "documents:admin")
+  const { error, user } = await requirePermission(req, "documents.admin")
   if (error) return error
 
   const body = await parseJsonBody(req)
@@ -136,3 +136,4 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
     return errorResponse('Failed to create division', 500)
   }
 })
+

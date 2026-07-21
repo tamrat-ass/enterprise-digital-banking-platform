@@ -15,7 +15,7 @@ import { eq } from "drizzle-orm"
  * Get a specific division
  */
 export const GET = withErrorHandling(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const { error, user } = await requirePermission(req, "documents:view")
+  const { error, user } = await requirePermission(req, "documents.view")
   if (error) return error
 
   const { id } = await params
@@ -43,7 +43,7 @@ export const GET = withErrorHandling(async (req: NextRequest, { params }: { para
  * Update a division
  */
 export const PUT = withErrorHandling(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const { error, user } = await requirePermission(req, "documents:admin")
+  const { error, user } = await requirePermission(req, "divisions.update")
   if (error) return error
 
   const { id } = await params
@@ -92,7 +92,7 @@ export const PUT = withErrorHandling(async (req: NextRequest, { params }: { para
  * Delete a division
  */
 export const DELETE = withErrorHandling(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const { error, user } = await requirePermission(req, "documents:admin")
+  const { error, user } = await requirePermission(req, "divisions.delete")
   if (error) return error
 
   const { id } = await params

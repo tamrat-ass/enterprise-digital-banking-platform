@@ -37,10 +37,10 @@ export async function fetchDocuments(
     }
 
     // Check if user has permission to view documents
-    if (!user.permissions?.includes('documents:view')) {
+    if (!user.permissions?.includes('documents.view')) {
       return {
         success: false,
-        error: 'Permission denied: documents:view',
+        error: 'Permission denied: documents.view',
       }
     }
 
@@ -63,6 +63,55 @@ export async function fetchDocuments(
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to fetch documents',
+    }
+  }
+}
+
+/**
+ * Server action to fetch only the current user's files (My Files)
+ * Filters documents by the authenticated user who uploaded them
+ */
+export async function fetchMyFiles(
+  filters: DocumentFilters
+): Promise<FetchDocumentsResult> {
+  try {
+    const user = await getCurrentUser()
+    
+    if (!user) {
+      return {
+        success: false,
+        error: 'Unauthorized',
+      }
+    }
+
+    // Check if user has permission to view documents
+    if (!user.permissions?.includes('documents.view')) {
+      return {
+        success: false,
+        error: 'Permission denied: documents.view',
+      }
+    }
+
+    // Call DocumentService with uploadedBy filter
+    const result = await DocumentService.listDocuments({
+      page: filters.page || 1,
+      limit: filters.limit || 20,
+      category: filters.category,
+      status: filters.status as any,
+      departmentId: filters.departmentId,
+      search: filters.search,
+      uploadedBy: user.id, // Filter by current user ID
+    })
+
+    return {
+      success: true,
+      data: result.data || [],
+    }
+  } catch (err) {
+    console.error('[fetchMyFiles] Error:', err)
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Failed to fetch my files',
     }
   }
 }

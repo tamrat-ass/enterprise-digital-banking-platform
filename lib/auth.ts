@@ -24,15 +24,19 @@ console.log("[Auth] trustedOrigins:", trustedOrigins)
 export const auth = betterAuth({
   database: new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    max: parseInt(process.env.DB_AUTH_POOL_MAX || '10'),
+    min: parseInt(process.env.DB_AUTH_POOL_MIN || '1'),
+    idleTimeoutMillis: parseInt(process.env.DB_AUTH_IDLE_TIMEOUT || '30000'),
+    connectionTimeoutMillis: parseInt(process.env.DB_AUTH_CONNECT_TIMEOUT || '5000'),
   }),
   baseURL,
   trustedOrigins,
   secret: process.env.BETTER_AUTH_SECRET || "dev-secret-key-min-32-chars-recommended-for-production",
   emailAndPassword: {
     enabled: true,
+    autoSignUpCallback: async (user) => {
+      return false
+    },
   },
   databaseURI: process.env.DATABASE_URL,
   logger: {

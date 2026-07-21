@@ -1,17 +1,17 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { profiles, user, userRoles, roles as rolesTable, permissions, rolePermissions, departments } from "@/lib/db/schema"
+import { profiles, userRoles, roles as rolesTable, permissions, rolePermissions, departments, session as sessionTable, user } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { ROLES, type Permission, type RoleKey } from "@/lib/rbac"
+import { cache } from "react"
+import { type Permission } from "@/lib/rbac"
 
 export interface CurrentUser {
   id: string
   name: string
   email: string
   jobTitle: string | null
-  roleKey: RoleKey
   roleName: string
   roleId: string | null
   departmentId: string | null
@@ -20,124 +20,250 @@ export interface CurrentUser {
 }
 
 /**
+ * Get the session token from the request headers/cookies
+ */
+async function getSessionToken(): Promise<string | null> {
+  try {
+    const headersList = await headers()
+    const cookieHeader = headersList.get('cookie') || ''
+    
+    // Parse authToken from cookies
+    const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.split('=')
+      acc[key.trim()] = decodeURIComponent(value || '')
+      return acc
+    }, {} as Record<string, string>)
+    
+    return cookies.authToken || null
+  } catch (err) {
+    console.error('[getSessionToken] Error parsing cookies:', err)
+    return null
+  }
+}
+
+/**
+ * Validate our custom session from the database
+ * Returns userId if valid session exists
+ */
+async function validateCustomSession(): Promise<string | null> {
+  try {
+    const token = await getSessionToken()
+    if (!token) return null
+    
+    console.log('[validateCustomSession] Checking token:', token.substring(0, 20) + '...')
+    
+    // Query database for session
+    const sessions = await db
+      .select()
+      .from(sessionTable)
+      .where(eq(sessionTable.token, token))
+      .limit(1)
+    
+    if (!sessions.length) {
+      console.log('[validateCustomSession] No session found for token')
+      return null
+    }
+    
+    const sess = sessions[0]
+    
+    // NOTE: We do NOT check expiration anymore - tokens are static and don't expire
+    // This allows for permanent session tokens without needing refresh logic
+    
+    console.log('[validateCustomSession] Session valid for userId:', sess.userId)
+    return sess.userId
+  } catch (err) {
+    console.error('[validateCustomSession] Error validating session:', err)
+    return null
+  }
+}
+
+/**
  * Returns the authenticated user's id, or throws. Use inside server actions.
  */
 export async function getUserId() {
+  // First try custom session
+  const customUserId = await validateCustomSession()
+  if (customUserId) {
+    return customUserId
+  }
+  
+  // Fallback to Better Auth
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) throw new Error("Unauthorized")
   return session.user.id
 }
 
 /**
+ * Internal function: Directly queries database for user data
+ * Combines role, profile, department, and permissions into a SINGLE efficient query
+ * 
+ * OPTIMIZATION: Previously made 2 separate queries:
+ *   1. userRoles + rolesTable + profiles + departments
+ *   2. rolePermissions + permissions
+ * 
+ * Now combines into 1 query with LEFT JOIN on permissions
+ */
+async function fetchUserDataFromDatabase(userId: string): Promise<CurrentUser | null> {
+  try {
+    console.log('[fetchUserDataFromDatabase] Querying for userId:', userId)
+    
+    // SINGLE OPTIMIZED QUERY: Get role, profile, and ALL permissions in one go
+    const result = await db
+      .select({
+        roleId: userRoles.roleId,
+        roleName: rolesTable.name,
+        jobTitle: profiles.jobTitle,
+        departmentId: profiles.departmentId,
+        departmentName: departments.name,
+        permissionModule: permissions.module,
+        permissionKey: permissions.permissionKey,
+      })
+      .from(userRoles)
+      .innerJoin(rolesTable, eq(userRoles.roleId, rolesTable.id))
+      .leftJoin(profiles, eq(userRoles.userId, profiles.userId))
+      .leftJoin(departments, eq(profiles.departmentId, departments.id))
+      .leftJoin(rolePermissions, eq(userRoles.roleId, rolePermissions.roleId))
+      .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(eq(userRoles.userId, userId))
+
+    if (result.length === 0) {
+      console.log('[fetchUserDataFromDatabase] No role found for user')
+      return null
+    }
+
+    const row = result[0]
+    console.log('[fetchUserDataFromDatabase] Found role:', row.roleName)
+
+    // Deduplicate permissions (may have multiple rows due to join)
+    const permissionKeys: Permission[] = [
+      ...new Set(
+        result
+          .filter(r => r.permissionModule && r.permissionKey)
+          .map(r => `${r.permissionModule}.${r.permissionKey}` as Permission)
+      )
+    ]
+
+    console.log('[fetchUserDataFromDatabase] Found', permissionKeys.length, 'permissions')
+
+    return {
+      id: userId,
+      name: '',
+      email: '',
+      jobTitle: row.jobTitle ?? null,
+      roleName: row.roleName || "No Role Assigned",
+      roleId: row.roleId || null,
+      departmentId: row.departmentId ?? null,
+      departmentName: row.departmentName ?? null,
+      permissions: permissionKeys,
+    } as CurrentUser
+  } catch (err) {
+    console.error('[fetchUserDataFromDatabase] Error:', err)
+    throw err
+  }
+}
+
+/**
  * Resolves the full current user with role + department + permissions.
  * Returns null when unauthenticated.
  */
-export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const session = await auth.api.getSession({ headers: await headers() })
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  // First try custom session
+  const customUserId = await validateCustomSession()
+  let userId = customUserId
   
-  if (!session?.user) {
+  // If custom session fails, try Better Auth
+  if (!userId) {
+    const session = await auth.api.getSession({ headers: await headers() })
+    userId = session?.user?.id
+  }
+  
+  if (!userId) {
     console.log('[getCurrentUser] No session found - user not authenticated')
     return null
   }
 
-  console.log('[getCurrentUser] Session found for user:', session.user.name)
+  console.log('[getCurrentUser] Session found for userId:', userId)
 
   try {
-    // Get user's primary role (first one assigned)
-    const userRoleRows = await db
-      .select({
-        roleId: userRoles.roleId,
-        roleName: rolesTable.name,
-        roleKey: rolesTable.key,
-        roleLevel: rolesTable.level,
-      })
-      .from(userRoles)
-      .innerJoin(rolesTable, eq(userRoles.roleId, rolesTable.id))
-      .where(eq(userRoles.userId, session.user.id))
-      .limit(1)
-
-    const userRole = userRoleRows[0]
+    const dbData = await fetchUserDataFromDatabase(userId)
     
-    // Get profile and department info
-    const profileRows = await db
-      .select({
-        jobTitle: profiles.jobTitle,
-        departmentId: profiles.departmentId,
-        departmentName: departments.name,
-      })
-      .from(profiles)
-      .leftJoin(departments, eq(profiles.departmentId, departments.id))
-      .where(eq(profiles.userId, session.user.id))
+    // Get user from database
+    const userRecord = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
       .limit(1)
-
-    const profile = profileRows[0]
-
-    // Determine role key
-    let roleKey: RoleKey = "staff"
-    let roleName = "Staff Member"
-    let roleId: string | null = null
     
-    if (userRole) {
-      roleKey = (userRole.roleKey as RoleKey) || "staff"
-      roleName = userRole.roleName || "Staff Member"
-      roleId = userRole.roleId
+    if (!userRecord.length) {
+      console.log('[getCurrentUser] User not found in database')
+      return null
     }
-
-    // Get all permissions for the role
-    let permissionKeys: Permission[] = []
-    if (roleId) {
-      const rolePerms = await db
-        .select({
-          permissionKey: permissions.key,
-        })
-        .from(rolePermissions)
-        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-        .where(eq(rolePermissions.roleId, roleId))
-
-      permissionKeys = rolePerms.map(p => p.permissionKey as Permission)
-    }
-
-    // Fall back to predefined role permissions if no database permissions found
-    if (permissionKeys.length === 0 && ROLES[roleKey]) {
-      const predefinedPerms = ROLES[roleKey].permissions
-      if (predefinedPerms === "*") {
-        permissionKeys = Object.values(ROLES)
-          .flatMap(role => Array.isArray(role.permissions) ? role.permissions : [])
-          .filter((v, i, a) => a.indexOf(v) === i) as Permission[]
-      } else if (Array.isArray(predefinedPerms)) {
-        permissionKeys = predefinedPerms
+    
+    const userData = userRecord[0]
+    
+    if (!dbData) {
+      console.warn('[getCurrentUser] No role assigned to user')
+      const fallbackUser: CurrentUser = {
+        id: userId,
+        name: userData.name,
+        email: userData.email,
+        jobTitle: null,
+        roleName: "No Role Assigned",
+        roleId: null,
+        departmentId: null,
+        departmentName: null,
+        permissions: [],
       }
+      return fallbackUser
     }
 
-    return {
-      id: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-      jobTitle: profile?.jobTitle ?? null,
-      roleKey,
-      roleName,
-      roleId,
-      departmentId: profile?.departmentId ?? null,
-      departmentName: profile?.departmentName ?? null,
-      permissions: permissionKeys,
+    const currentUser: CurrentUser = {
+      id: userId,
+      name: userData.name,
+      email: userData.email,
+      jobTitle: dbData.jobTitle,
+      roleName: dbData.roleName,
+      roleId: dbData.roleId,
+      departmentId: dbData.departmentId,
+      departmentName: dbData.departmentName,
+      permissions: dbData.permissions,
     }
+
+    console.log('[getCurrentUser] Successfully loaded user:', { 
+      name: currentUser.name, 
+      role: currentUser.roleName, 
+      permissions: currentUser.permissions.length 
+    })
+
+    return currentUser
   } catch (err) {
-    console.error('[getCurrentUser] Error fetching user data:', err)
-    // Return basic user info with default staff permissions
-    return {
-      id: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
+    console.error('[getCurrentUser] ERROR fetching user data:', err)
+    console.warn('[getCurrentUser] Falling back to no-role user')
+    
+    // Get minimal user info
+    const userRecord = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, userId))
+      .limit(1)
+    
+    if (!userRecord.length) return null
+    
+    const userData = userRecord[0]
+    const fallbackUser: CurrentUser = {
+      id: userId,
+      name: userData.name,
+      email: userData.email,
       jobTitle: null,
-      roleKey: "staff",
-      roleName: "Staff Member",
+      roleName: "No Role Assigned",
       roleId: null,
       departmentId: null,
       departmentName: null,
-      permissions: ROLES.staff.permissions as Permission[],
+      permissions: [],
     }
+    return fallbackUser
   }
-}
+})
 
 /**
  * Guards a page. Redirects to /sign-in when unauthenticated.

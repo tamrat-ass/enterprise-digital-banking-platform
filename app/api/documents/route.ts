@@ -20,7 +20,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
   
   const { error, user } = await requirePermission(
     req,
-    "documents:view",
+    "documents.view",
   )
   if (error) {
     console.log('[Documents API] Auth check failed - user:', user ? 'null' : 'exists')
@@ -71,7 +71,7 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
   
   const { error, user } = await requirePermission(
     req,
-    "documents:create",
+    "documents.upload",
   )
   if (error) {
     console.log('[POST Documents] Permission denied')
@@ -192,3 +192,4 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
   return successResponse(document, 201)
 })
+

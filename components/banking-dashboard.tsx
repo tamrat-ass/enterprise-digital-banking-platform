@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { COLORS } from '@/lib/colors'
 import { 
   FileText, 
   AlertCircle, 
@@ -25,16 +26,16 @@ interface StatCardProps {
 
 function StatCard({ icon, label, value, trend, trendColor = 'neutral', bgColor }: StatCardProps) {
   return (
-    <div className="bg-white border border-[#E6E6E6] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className={`${COLORS.background.card} border ${COLORS.border.light} rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow`}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-gray-600 text-sm font-medium">{label}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+          <p className={`${COLORS.text.secondary} text-sm font-medium`}>{label}</p>
+          <p className={`text-3xl font-bold ${COLORS.text.primary} mt-2`}>{value}</p>
           {trend && (
             <p className={`text-xs mt-2 ${
-              trendColor === 'green' ? 'text-[#2E7D32]' : 
-              trendColor === 'red' ? 'text-[#D32F2F]' : 
-              'text-gray-600'
+              trendColor === 'green' ? COLORS.status.success.text : 
+              trendColor === 'red' ? COLORS.status.error.text : 
+              COLORS.text.secondary
             }`}>
               {trend}
             </p>
@@ -84,8 +85,8 @@ export function BankingDashboard() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome back! Here's your file management overview.</p>
+        <h1 className={`text-3xl font-bold ${COLORS.text.primary}`}>Dashboard</h1>
+        <p className={`${COLORS.text.secondary} mt-2`}>Welcome back! Here's your file management overview.</p>
       </div>
 
       {/* Statistics Cards */}
@@ -150,22 +151,22 @@ export function BankingDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Upload Trend */}
-        <div className="bg-white border border-[#E6E6E6] rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">Monthly Upload Statistics</h2>
+        <div className={`${COLORS.background.card} border ${COLORS.border.light} rounded-2xl p-6 shadow-sm`}>
+          <h2 className={`text-lg font-bold ${COLORS.text.primary} mb-6`}>Monthly Upload Statistics</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={uploadTrendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E6E6E6" />
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
-              <Line type="monotone" dataKey="uploads" stroke="#6B4423" strokeWidth={2} dot={{ fill: '#6B4423', r: 4 }} />
+              <Line type="monotone" dataKey="uploads" stroke="#2563eb" strokeWidth={2} dot={{ fill: '#2563eb', r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         {/* Files by Department */}
-        <div className="bg-white border border-[#E6E6E6] rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">Files by Department</h2>
+        <div className={`${COLORS.background.card} border ${COLORS.border.light} rounded-2xl p-6 shadow-sm`}>
+          <h2 className={`text-lg font-bold ${COLORS.text.primary} mb-6`}>Files by Department</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -188,8 +189,8 @@ export function BankingDashboard() {
         </div>
 
         {/* Approval Trend */}
-        <div className="bg-white border border-[#E6E6E6] rounded-2xl p-6 shadow-sm lg:col-span-1">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">Approval Trend (Weekly)</h2>
+        <div className={`${COLORS.background.card} border ${COLORS.border.light} rounded-2xl p-6 shadow-sm lg:col-span-1`}>
+          <h2 className={`text-lg font-bold ${COLORS.text.primary} mb-6`}>Approval Trend (Weekly)</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={approvalTrendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E6E6E6" />
@@ -197,31 +198,31 @@ export function BankingDashboard() {
               <YAxis />
               <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
               <Legend />
-              <Bar dataKey="approved" fill="#2E7D32" radius={[8, 8, 0, 0]} />
-              <Bar dataKey="pending" fill="#FF9800" radius={[8, 8, 0, 0]} />
-              <Bar dataKey="rejected" fill="#D32F2F" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="approved" fill="#059669" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="pending" fill="#f59e0b" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="rejected" fill="#dc2626" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Storage Usage */}
-        <div className="bg-white border border-[#E6E6E6] rounded-2xl p-6 shadow-sm lg:col-span-1">
-          <h2 className="text-lg font-bold text-gray-900 mb-6">Storage Usage (Weekly)</h2>
+        <div className={`${COLORS.background.card} border ${COLORS.border.light} rounded-2xl p-6 shadow-sm lg:col-span-1`}>
+          <h2 className={`text-lg font-bold ${COLORS.text.primary} mb-6`}>Storage Usage (Weekly)</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={storageData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E6E6E6" />
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} />
-              <Line type="monotone" dataKey="used" stroke="#1976D2" strokeWidth={2} fill="#1976D2" fillOpacity={0.1} />
+              <Line type="monotone" dataKey="used" stroke="#2563eb" strokeWidth={2} fill="#2563eb" fillOpacity={0.1} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-white border border-[#E6E6E6] rounded-2xl p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-gray-900 mb-6">Recent Activities</h2>
+      <div className={`${COLORS.background.card} border ${COLORS.border.light} rounded-2xl p-6 shadow-sm`}>
+        <h2 className={`text-lg font-bold ${COLORS.text.primary} mb-6`}>Recent Activities</h2>
         <div className="space-y-4">
           {[
             { action: 'File Approved', file: 'Q2_Financial_Report_2024.pdf', user: 'Sarah Johnson', time: '2 hours ago', type: 'success' },
@@ -230,21 +231,21 @@ export function BankingDashboard() {
             { action: 'File Shared', file: 'Budget_2024.pdf', user: 'Michael Chen', time: '8 hours ago', type: 'info' },
             { action: 'Permission Changed', file: 'Compliance_Audit.docx', user: 'Lisa Anderson', time: '1 day ago', type: 'warning' },
           ].map((activity, index) => (
-            <div key={index} className="flex items-start gap-4 pb-4 border-b border-[#E6E6E6] last:border-b-0">
+            <div key={index} className={`flex items-start gap-4 pb-4 border-b ${COLORS.border.light} last:border-b-0`}>
               <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                activity.type === 'success' ? 'bg-[#2E7D32] bg-opacity-10 text-[#2E7D32]' :
-                activity.type === 'danger' ? 'bg-[#D32F2F] bg-opacity-10 text-[#D32F2F]' :
-                activity.type === 'warning' ? 'bg-[#FF9800] bg-opacity-10 text-[#FF9800]' :
-                'bg-[#1976D2] bg-opacity-10 text-[#1976D2]'
+                activity.type === 'success' ? 'bg-emerald-100 text-emerald-700' :
+                activity.type === 'danger' ? 'bg-red-100 text-red-700' :
+                activity.type === 'warning' ? 'bg-amber-100 text-amber-700' :
+                'bg-blue-100 text-blue-700'
               }`}>
                 <BarChart3 size={18} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900">{activity.action}</p>
-                <p className="text-sm text-gray-600">{activity.file}</p>
+                <p className={`font-semibold ${COLORS.text.primary}`}>{activity.action}</p>
+                <p className={`text-sm ${COLORS.text.secondary}`}>{activity.file}</p>
                 <div className="flex items-center gap-4 mt-1">
-                  <span className="text-xs text-gray-500">By {activity.user}</span>
-                  <span className="text-xs text-gray-500">{activity.time}</span>
+                  <span className={`text-xs ${COLORS.text.tertiary}`}>By {activity.user}</span>
+                  <span className={`text-xs ${COLORS.text.tertiary}`}>{activity.time}</span>
                 </div>
               </div>
             </div>

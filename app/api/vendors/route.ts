@@ -15,7 +15,7 @@ import {
  * List vendors
  */
 export const GET = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "vendors:view")
+  const { error, user } = await requirePermission(req, "vendors.view")
   if (error) return error
 
   const page = parseInt(req.nextUrl.searchParams.get("page") || "1")
@@ -42,7 +42,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
  * Create a new vendor
  */
 export const POST = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "vendors:view")
+  const { error, user } = await requirePermission(req, "vendors.view")
   if (error) return error
 
   const body = await parseJsonBody(req)
@@ -62,3 +62,4 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
   return successResponse(vendor, 201)
 })
+

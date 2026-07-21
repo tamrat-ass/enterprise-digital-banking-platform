@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { CurrentUser } from "@/lib/session"
-import { canAccessModule } from "@/lib/rbac"
+import { canAccessModule, type Permission } from "@/lib/rbac"
 import { authClient } from "@/lib/auth-client"
 
 interface DashboardLayoutProps {
@@ -34,9 +34,11 @@ export function DashboardLayout({ user, children }: DashboardLayoutProps) {
     router.push("/sign-in")
   }
 
-  const accessibleItems = SIDEBAR_ITEMS.filter((item) =>
-    user && user.permissions ? canAccessModule(user.permissions, item.module as any) : true,
-  )
+  const accessibleItems = SIDEBAR_ITEMS.filter((item) => {
+    if (!user || !user.permissions) return true
+    const permission = item.module as Permission
+    return canAccessModule(user.permissions, permission)
+  })
 
   return (
     <div className="min-h-screen bg-background flex">

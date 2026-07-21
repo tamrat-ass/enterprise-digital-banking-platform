@@ -18,7 +18,7 @@ import {
  * Get overall dashboard statistics
  */
 export const GET = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "dashboard:view")
+  const { error, user } = await requirePermission(req, "dashboard.view")
   if (error) return error
 
   const [
@@ -46,3 +46,4 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
     compliance: complianceStats,
   })
 })
+

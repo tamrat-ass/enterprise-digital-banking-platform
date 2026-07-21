@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect } from 'react'
 import { BankingLayout } from "@/components/banking-layout"
+import { ErrorBoundary } from "@/lib/error-boundary"
 import { ArrowLeft, Search, Loader, Copy, Check } from 'lucide-react'
 import Link from 'next/link'
 
 interface Permission {
   id: string
-  key: string
-  name: string
   module: string
-  action: string
+  permissionKey: string
+  permissionName: string
+  description: string | null
 }
 
 export default function PermissionsPage() {
@@ -51,8 +52,9 @@ export default function PermissionsPage() {
 
   const allPermissions = Object.values(permissions).flat()
   const filteredPermissions = allPermissions.filter(p =>
-    p.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    `${p.module}.${p.permissionKey}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.permissionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
   )
 
   const modules = Object.keys(permissions).sort()
@@ -62,29 +64,18 @@ export default function PermissionsPage() {
     const colors: Record<string, string> = {
       documents: 'from-blue-50 to-blue-100 border-blue-200',
       approvals: 'from-purple-50 to-purple-100 border-purple-200',
-      projects: 'from-green-50 to-green-100 border-green-200',
+      reports: 'from-green-50 to-green-100 border-green-200',
       users: 'from-orange-50 to-orange-100 border-orange-200',
       audit: 'from-red-50 to-red-100 border-red-200',
-      compliance: 'from-indigo-50 to-indigo-100 border-indigo-200',
-      risk: 'from-amber-50 to-amber-100 border-amber-200',
+      roles: 'from-indigo-50 to-indigo-100 border-indigo-200',
+      categories: 'from-amber-50 to-amber-100 border-amber-200',
     }
     return colors[module] || 'from-gray-50 to-gray-100 border-gray-200'
   }
 
-  const getActionBadgeColor = (action: string) => {
-    const colors: Record<string, string> = {
-      view: 'bg-blue-100 text-blue-700',
-      create: 'bg-green-100 text-green-700',
-      edit: 'bg-yellow-100 text-yellow-700',
-      delete: 'bg-red-100 text-red-700',
-      approve: 'bg-purple-100 text-purple-700',
-      admin: 'bg-red-100 text-red-700 font-bold',
-    }
-    return colors[action] || 'bg-gray-100 text-gray-700'
-  }
-
   return (
-    <BankingLayout user={{ name: 'Admin', role: 'Administrator', department: 'System' }}>
+    <ErrorBoundary>
+      <BankingLayout user={{ name: 'Admin', role: 'Administrator', department: 'System', permissions: ['admin.view'] as any }}>
       <div className="space-y-8">
         {/* Header */}
         <div className="flex items-start justify-between gap-6">
@@ -149,18 +140,21 @@ export default function PermissionsPage() {
               filteredPermissions.map(perm => (
                 <div key={perm.id} className="bg-white border border-[#E6E6E6] rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow">
                   <div>
-                    <p className="font-mono font-semibold text-gray-900">{perm.key}</p>
-                    <p className="text-gray-600 text-sm">{perm.name}</p>
+                    <p className="font-mono font-semibold text-gray-900">{perm.module}.{perm.permissionKey}</p>
+                    <p className="text-gray-600 text-sm">{perm.permissionName}</p>
+                    {perm.description && (
+                      <p className="text-gray-500 text-xs mt-1">{perm.description}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getActionBadgeColor(perm.action)}`}>
-                      {perm.action}
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700`}>
+                      {perm.permissionKey}
                     </span>
                     <button
-                      onClick={() => handleCopy(perm.key)}
+                      onClick={() => handleCopy(`${perm.module}.${perm.permissionKey}`)}
                       className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-blue-600 transition-colors"
                     >
-                      {copiedId === perm.key ? (
+                      {copiedId === `${perm.module}.${perm.permissionKey}` ? (
                         <Check size={18} className="text-green-600" />
                       ) : (
                         <Copy size={18} />
@@ -192,21 +186,24 @@ export default function PermissionsPage() {
                       <div
                         key={perm.id}
                         className="bg-white bg-opacity-70 hover:bg-opacity-100 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-all group cursor-pointer"
-                        onClick={() => handleCopy(perm.key)}
+                        onClick={() => handleCopy(`${perm.module}.${perm.permissionKey}`)}
                       >
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <p className="font-mono font-semibold text-gray-900 text-sm break-all group-hover:text-blue-600">
-                            {perm.key}
+                            {perm.permissionKey}
                           </p>
-                          {copiedId === perm.key ? (
+                          {copiedId === `${perm.module}.${perm.permissionKey}` ? (
                             <Check size={16} className="text-green-600 flex-shrink-0 mt-0.5" />
                           ) : (
                             <Copy size={16} className="text-gray-400 group-hover:text-blue-600 flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                           )}
                         </div>
-                        <p className="text-gray-600 text-xs">{perm.name}</p>
-                        <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold ${getActionBadgeColor(perm.action)}`}>
-                          {perm.action}
+                        <p className="text-gray-600 text-xs">{perm.permissionName}</p>
+                        {perm.description && (
+                          <p className="text-gray-500 text-xs mt-1">{perm.description}</p>
+                        )}
+                        <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700`}>
+                          {perm.permissionKey}
                         </span>
                       </div>
                     ))}
@@ -221,17 +218,16 @@ export default function PermissionsPage() {
         <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg p-6">
           <h3 className="font-semibold text-indigo-900 mb-2">Permission Format</h3>
           <p className="text-indigo-800 text-sm mb-3">
-            Permissions follow the format <code className="bg-indigo-100 px-2 py-1 rounded font-mono">module:action</code>
+            Permissions follow the format <code className="bg-indigo-100 px-2 py-1 rounded font-mono">module.permissionKey</code>
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-xs">
-            {['view', 'create', 'edit', 'delete', 'approve', 'admin'].map(action => (
-              <span key={action} className={`p-2 rounded text-center font-semibold ${getActionBadgeColor(action)}`}>
-                {action}
-              </span>
-            ))}
-          </div>
+          <p className="text-indigo-700 text-sm">
+            Example: <code className="bg-indigo-100 px-2 py-1 rounded font-mono">documents.upload</code>, 
+            <code className="bg-indigo-100 px-2 py-1 rounded font-mono ml-2">users.create</code>, 
+            <code className="bg-indigo-100 px-2 py-1 rounded font-mono ml-2">audit.view</code>
+          </p>
         </div>
       </div>
     </BankingLayout>
+    </ErrorBoundary>
   )
 }

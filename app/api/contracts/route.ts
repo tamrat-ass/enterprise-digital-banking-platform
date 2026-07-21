@@ -15,7 +15,7 @@ import {
  * List contracts
  */
 export const GET = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "contracts:view")
+  const { error, user } = await requirePermission(req, "contracts.view")
   if (error) return error
 
   const page = parseInt(req.nextUrl.searchParams.get("page") || "1")
@@ -30,7 +30,7 @@ export const GET = withErrorHandling(async (req: NextRequest) => {
  * Create a new contract
  */
 export const POST = withErrorHandling(async (req: NextRequest) => {
-  const { error, user } = await requirePermission(req, "contracts:view")
+  const { error, user } = await requirePermission(req, "contracts.view")
   if (error) return error
 
   const body = await parseJsonBody(req)
@@ -50,3 +50,4 @@ export const POST = withErrorHandling(async (req: NextRequest) => {
 
   return successResponse(contract, 201)
 })
+

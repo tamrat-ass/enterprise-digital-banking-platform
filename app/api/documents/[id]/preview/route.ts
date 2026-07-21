@@ -19,7 +19,7 @@ export async function GET(
 ) {
   const { error } = await requirePermission(
     req,
-    "documents:view",
+    "documents.view",
   )
   if (error) return error
 

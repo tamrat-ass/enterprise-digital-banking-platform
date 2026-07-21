@@ -12,6 +12,7 @@ import {
   ChevronUp,
   Loader,
 } from 'lucide-react'
+import { logger } from '@/lib/logger'
 
 interface Division {
   id: string
@@ -56,7 +57,7 @@ export function DivisionsManager({ departmentId, departmentName }: { departmentI
   const fetchDivisions = async () => {
     try {
       setLoading(true)
-      console.log('[DivisionsManager] Fetching divisions for department:', departmentId)
+      logger.debug('[DivisionsManager] Fetching divisions for department:', departmentId)
       const response = await fetch(`/api/divisions?departmentId=${departmentId}`, {
         credentials: 'include',
       })
@@ -66,7 +67,7 @@ export function DivisionsManager({ departmentId, departmentName }: { departmentI
       }
 
       const json = await response.json()
-      console.log('[DivisionsManager] API Response:', json)
+      logger.debug('[DivisionsManager] API Response:', json)
       
       // Handle different response formats
       let divisionsList = []
@@ -78,12 +79,12 @@ export function DivisionsManager({ departmentId, departmentName }: { departmentI
         }
       }
       
-      console.log('[DivisionsManager] Parsed divisions:', divisionsList)
+      logger.debug('[DivisionsManager] Parsed divisions:', divisionsList)
       setDivisions(divisionsList)
       setError(null)
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to load divisions'
-      console.error('[DivisionsManager] Error:', errorMsg)
+      logger.error('[DivisionsManager] Error:', errorMsg)
       setError(errorMsg)
       setDivisions([])
     } finally {

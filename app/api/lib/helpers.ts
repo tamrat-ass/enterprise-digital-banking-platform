@@ -11,3 +11,4 @@ export function successResponse(data: any, status: number = 200) {
 export function generateId() {
   return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
+
