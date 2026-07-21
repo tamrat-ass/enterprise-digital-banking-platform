@@ -4,7 +4,7 @@ import {
   documentVersions,
   approvalRequests,
 } from "@/lib/db/schema"
-import { eq, desc, and, ilike, sql } from "drizzle-orm"
+import { eq, desc, and, ilike, sql, isNull } from "drizzle-orm"
 import { recordAudit } from "@/lib/audit"
 import { FileStorageService } from "./file-storage.service"
 import { PDFConversionService } from "./pdf-conversion.service"
@@ -313,12 +313,16 @@ export class DocumentService {
   /**
    * Get document with versions
    */
-  static async getDocument(documentId: string) {
+  static async getDocument(documentId: string, includeDeleted: boolean = false) {
     // Use RAW SQL to read document (avoid any Drizzle ORM issues)
+    const whereClause = includeDeleted
+      ? sql`WHERE id = ${documentId}`
+      : sql`WHERE id = ${documentId} AND deleted_at IS NULL`
+    
     const docResults = await db.execute(sql`
-      SELECT id, title, description, category, department_id, division_id, status, current_version, tags, owner_id, owner_name, access_level, expiry_date, created_at, updated_at
+      SELECT id, title, description, category, department_id, division_id, status, current_version, tags, owner_id, owner_name, access_level, expiry_date, created_at, updated_at, deleted_at
       FROM documents
-      WHERE id = ${documentId}
+      ${whereClause}
       LIMIT 1
     `)
 
@@ -384,7 +388,7 @@ export class DocumentService {
     } = filters
     const offset = (page - 1) * limit
 
-    const whereConditions: any[] = []
+    const whereConditions: any[] = [isNull(documents.deletedAt)] // Exclude soft-deleted files by default
 
     if (category) whereConditions.push(eq(documents.category, category))
     if (status) whereConditions.push(eq(documents.status, status))

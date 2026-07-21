@@ -569,7 +569,7 @@ export function UsersPageClient() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 relative">
                           <button
                             onClick={() => {
                               setSelectedUser(user)

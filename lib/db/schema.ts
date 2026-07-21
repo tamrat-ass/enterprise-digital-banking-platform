@@ -188,6 +188,10 @@ export const documents = pgTable("documents", {
   expiryDate: date("expiry_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  // Soft delete columns
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: text("deleted_by"),
+  originalStatus: text("original_status"),
 })
 
 export const documentVersions = pgTable("document_versions", {

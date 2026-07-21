@@ -63,6 +63,11 @@ export class RBACService {
         { module: 'categories', permissionKey: 'delete', permissionName: 'Delete Categories' },
         // Audit module
         { module: 'audit', permissionKey: 'view', permissionName: 'View Audit Logs' },
+        // Recycle Bin module
+        { module: 'recycleBin', permissionKey: 'view', permissionName: 'View Recycle Bin' },
+        { module: 'file', permissionKey: 'delete', permissionName: 'Delete Files' },
+        { module: 'file', permissionKey: 'restore', permissionName: 'Restore Files' },
+        { module: 'file', permissionKey: 'permanentDelete', permissionName: 'Permanently Delete Files' },
       ]
 
       // Create permissions
@@ -103,6 +108,7 @@ export class RBACService {
             'roles.view', 'roles.create', 'roles.update', 'roles.delete',
             'audit.view',
             'categories.view', 'categories.create', 'categories.update', 'categories.delete',
+            'recycleBin.view', 'file.delete', 'file.restore', 'file.permanentDelete',
           ],
         },
         {
@@ -113,6 +119,7 @@ export class RBACService {
             'documents.create', 'documents.view', 'documents.update', 'documents.upload',
             'documents.preview', 'documents.download',
             'categories.view', 'categories.create', 'categories.update',
+            'recycleBin.view', 'file.delete', 'file.restore',
           ],
         },
         {

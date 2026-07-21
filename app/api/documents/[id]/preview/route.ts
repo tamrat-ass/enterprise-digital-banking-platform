@@ -24,11 +24,15 @@ export async function GET(
   if (error) return error
 
   const { id: documentId } = await params
+  
+  // Check if this is a preview request for a deleted file from Recycle Bin
+  const url = new URL(req.url)
+  const includeDeleted = url.searchParams.get('includeDeleted') === 'true'
 
-  console.log('[Preview] Request for document:', documentId)
+  console.log('[Preview] Request for document:', documentId, { includeDeleted })
 
   try {
-    const document = await DocumentService.getDocument(documentId)
+    const document = await DocumentService.getDocument(documentId, includeDeleted)
     console.log('[Preview] Document found:', { id: document.id, title: document.title })
     
     // Get the latest version - use the one from getDocument which already fetched it
@@ -214,6 +218,8 @@ Check the server console for details.
             'Content-Type': previewMimeType,
             'Content-Disposition': `${disposition}; filename="${displayFileName}"`,
             'Cache-Control': 'public, max-age=3600',
+            // Force inline viewing for PDFs - some browsers download by default
+            'X-Content-Type-Options': 'nosniff',
           },
         })
       } catch (fileErr) {
@@ -239,7 +245,7 @@ Check the server console for details.
       status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${fileName}.txt"`,
+        'Content-Disposition': `inline; filename="${fileName}.txt"`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     })

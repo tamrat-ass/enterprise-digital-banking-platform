@@ -12,10 +12,13 @@ import {
   MoreVertical,
   Search,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Trash2,
+  Printer,
 } from 'lucide-react'
 import { useDocumentRefresh } from '@/lib/contexts/document-refresh'
 import { fetchDocuments } from '@/app/actions/documents'
+import { softDeleteDocument } from '@/app/actions/recycle-bin'
 import { ShareDialog } from './share-dialog'
 import { logger } from '@/lib/logger'
 
@@ -69,6 +72,9 @@ export function FileManagementTable() {
   const [divisionsCache, setDivisionsCache] = useState<Record<string, string>>({})
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [selectedFileForShare, setSelectedFileForShare] = useState<FileRecord | null>(null)
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{ isOpen: boolean; fileId?: string; fileName?: string }>({ isOpen: false })
+  const [moreOptionsMenuOpen, setMoreOptionsMenuOpen] = useState<string | null>(null)
+  const [selectedFileForPrint, setSelectedFileForPrint] = useState<FileRecord | null>(null)
 
   useEffect(() => {
     fetchFiles()
@@ -293,9 +299,261 @@ export function FileManagementTable() {
     }
   }
 
-  const handleMoreOptions = (fileId: string) => {
-    // TODO: Implement more options menu
-    alert(`More options for file: ${fileId}`)
+  const handleMoreOptions = (file: FileRecord) => {
+    setSelectedFileForPrint(file)
+  }
+
+  const handlePrintFilePrivileges = async () => {
+    if (!selectedFileForPrint) return
+    
+    try {
+      // Open print window with file access information
+      const printWindow = window.open('', 'printFilePrivileges', 'width=1000,height=800')
+      if (printWindow) {
+        const html = `
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>File Access Privileges - ${selectedFileForPrint.title}</title>
+            <style>
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                background: white;
+                padding: 20px;
+              }
+              .container {
+                max-width: 900px;
+                margin: 0 auto;
+              }
+              .header {
+                border-bottom: 3px solid #6B4423;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+              .header h1 {
+                color: #6B4423;
+                font-size: 28px;
+                margin-bottom: 10px;
+              }
+              .header p {
+                color: #666;
+                font-size: 14px;
+              }
+              .file-info {
+                background: #f5f5f5;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+              }
+              .info-row {
+                display: grid;
+                grid-template-columns: 150px 1fr;
+                gap: 20px;
+                margin-bottom: 15px;
+              }
+              .info-row:last-child {
+                margin-bottom: 0;
+              }
+              .info-label {
+                font-weight: 600;
+                color: #666;
+                font-size: 12px;
+                text-transform: uppercase;
+              }
+              .info-value {
+                font-size: 14px;
+                color: #333;
+                word-break: break-word;
+              }
+              .section {
+                margin-bottom: 30px;
+              }
+              .section-title {
+                font-size: 16px;
+                font-weight: bold;
+                color: #6B4423;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #e0e0e0;
+                margin-bottom: 15px;
+              }
+              .access-item {
+                background: #f9f9f9;
+                border: 1px solid #e0e0e0;
+                padding: 12px;
+                border-radius: 6px;
+                margin-bottom: 10px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              }
+              .access-item::before {
+                content: "✓ ";
+                color: #4CAF50;
+                font-weight: bold;
+                margin-right: 10px;
+              }
+              .access-level-badge {
+                display: inline-block;
+                background: #6B4423;
+                color: white;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+              }
+              .footer {
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 2px solid #e0e0e0;
+                font-size: 12px;
+                color: #999;
+                display: flex;
+                justify-content: space-between;
+              }
+              .print-date {
+                text-align: right;
+              }
+              @media print {
+                body {
+                  padding: 0;
+                }
+                .container {
+                  max-width: 100%;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>File Access Privileges Report</h1>
+                <p>Document Access and Permission Summary</p>
+              </div>
+              
+              <div class="file-info">
+                <div class="info-row">
+                  <div class="info-label">File Name</div>
+                  <div class="info-value">${selectedFileForPrint.title || 'Untitled'}</div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">Document ID</div>
+                  <div class="info-value">${selectedFileForPrint.id}</div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">Category</div>
+                  <div class="info-value">${selectedFileForPrint.category || 'Not categorized'}</div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">Access Level</div>
+                  <div class="info-value"><span class="access-level-badge">${selectedFileForPrint.accessLevel || 'Default'}</span></div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">Owner</div>
+                  <div class="info-value">${selectedFileForPrint.ownerName || 'Unknown'}</div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">Created Date</div>
+                  <div class="info-value">${new Date(selectedFileForPrint.createdAt).toLocaleDateString()}</div>
+                </div>
+                <div class="info-row">
+                  <div class="info-label">Status</div>
+                  <div class="info-value">${selectedFileForPrint.status || 'Active'}</div>
+                </div>
+              </div>
+              
+              <div class="section">
+                <div class="section-title">Access Privileges</div>
+                <div class="access-item">
+                  <span>View Access</span>
+                  <span>${selectedFileForPrint.permission === 'view' || selectedFileForPrint.permission === 'download' || selectedFileForPrint.permission === 'edit' ? '✓' : '✗'}</span>
+                </div>
+                <div class="access-item">
+                  <span>Download Access</span>
+                  <span>${selectedFileForPrint.permission === 'download' || selectedFileForPrint.permission === 'edit' ? '✓' : '✗'}</span>
+                </div>
+                <div class="access-item">
+                  <span>Edit Access</span>
+                  <span>${selectedFileForPrint.permission === 'edit' ? '✓' : '✗'}</span>
+                </div>
+              </div>
+
+              <div class="section">
+                <div class="section-title">Additional Information</div>
+                <div class="access-item">
+                  <span>Version</span>
+                  <span>v${selectedFileForPrint.currentVersion || 1}</span>
+                </div>
+                <div class="access-item">
+                  <span>Visibility</span>
+                  <span>${selectedFileForPrint.visibility || 'Internal'}</span>
+                </div>
+              </div>
+              
+              <div class="footer">
+                <div>Enterprise Digital Banking Platform</div>
+                <div class="print-date">Generated: ${new Date().toLocaleString()}</div>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+        printWindow.document.write(html)
+        printWindow.document.close()
+        setTimeout(() => {
+          printWindow.print()
+        }, 250)
+      }
+      setSelectedFileForPrint(null)
+      setMoreOptionsMenuOpen(null)
+    } catch (err) {
+      console.error('Print error:', err)
+      alert('Failed to print file privileges')
+    }
+  }
+
+  const handleDeleteFile = (fileId: string, fileName: string) => {
+    setDeleteConfirmDialog({
+      isOpen: true,
+      fileId,
+      fileName
+    })
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmDialog.fileId) return
+
+    try {
+      const result = await softDeleteDocument(deleteConfirmDialog.fileId)
+      if (result.success) {
+        alert('File moved to recycle bin')
+        setDeleteConfirmDialog({ isOpen: false })
+        // Refresh the files list
+        const result = await fetchDocuments({
+          page,
+          limit: 20,
+          status: filterStatus || undefined,
+          search: searchTerm || undefined,
+        })
+        
+        if (result.success) {
+          setFiles(result.data || [])
+        }
+      } else {
+        alert(`Failed to delete: ${result.error}`)
+      }
+    } catch (err) {
+      console.error('Delete error:', err)
+      alert('Failed to delete file')
+    }
   }
 
   if (loading) {
@@ -328,6 +586,32 @@ export function FileManagementTable() {
 
   return (
     <div className="space-y-6">
+      {/* Delete Confirm Dialog */}
+      {deleteConfirmDialog.isOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Delete File?</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete "{deleteConfirmDialog.fileName}"? You can restore it from the Recycle Bin.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmDialog({ isOpen: false })}
+                className="px-4 py-2 border border-[#E6E6E6] rounded-lg text-gray-700 hover:bg-[#F5F5F5] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">File Management</h1>
@@ -430,27 +714,61 @@ export function FileManagementTable() {
                       >
                         <Eye size={18} className="text-red-700" />
                       </button>
-                      <button 
-                        onClick={() => handleDownloadFile(file.id, file.title)}
-                        className="p-2 hover:bg-red-50 rounded-lg transition-colors" 
-                        title="Download"
-                      >
-                        <Download size={18} className="text-red-700" />
-                      </button>
-                      <button 
-                        onClick={() => handleShareFile(file.id, file)}
-                        className="p-2 hover:bg-red-50 rounded-lg transition-colors" 
-                        title="Share"
-                      >
-                        <Share2 size={18} className="text-red-700" />
-                      </button>
-                      <button 
-                        onClick={() => handleMoreOptions(file.id)}
-                        className="p-2 hover:bg-red-50 rounded-lg transition-colors" 
-                        title="More options"
-                      >
-                        <MoreVertical size={18} className="text-red-700" />
-                      </button>
+                      <div className="relative">
+                        <button 
+                          onClick={() => setMoreOptionsMenuOpen(moreOptionsMenuOpen === file.id ? null : file.id)}
+                          className="p-2 hover:bg-red-50 rounded-lg transition-colors" 
+                          title="More options"
+                        >
+                          <MoreVertical size={18} className="text-red-700" />
+                        </button>
+                        
+                        {/* More Options Dropdown */}
+                        {moreOptionsMenuOpen === file.id && (
+                          <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                            <button
+                              onClick={() => {
+                                setSelectedFileForPrint(file)
+                                handlePrintFilePrivileges()
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2 text-sm border-b border-gray-200"
+                            >
+                              <Printer className="w-4 h-4" />
+                              Print
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleDownloadFile(file.id, file.title)
+                                setMoreOptionsMenuOpen(null)
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2 text-sm border-b border-gray-200"
+                            >
+                              <Download className="w-4 h-4" />
+                              Download
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleShareFile(file.id, file)
+                                setMoreOptionsMenuOpen(null)
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2 text-sm border-b border-gray-200"
+                            >
+                              <Share2 className="w-4 h-4" />
+                              Share
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleDeleteFile(file.id, file.title)
+                                setMoreOptionsMenuOpen(null)
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-red-50 flex items-center gap-2 text-sm text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>

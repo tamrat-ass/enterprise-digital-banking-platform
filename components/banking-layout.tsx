@@ -20,7 +20,8 @@ import {
   Users,
   BarChart3,
   History,
-  AlertTriangle
+  AlertTriangle,
+  Trash2
 } from 'lucide-react'
 import { theme } from '@/lib/theme'
 import type { Permission } from '@/lib/rbac'
@@ -42,6 +43,7 @@ const menuItemsConfig = [
   { icon: FolderOpen, label: 'File Management', href: '/file-management', permission: 'documents.view' },
   { icon: Upload, label: 'Upload Files', href: '/upload', permission: 'documents.upload' },
   { icon: FileText, label: 'My Files', href: '/my-files', permission: 'documents.view' },
+  { icon: Trash2, label: 'Recycle Bin', href: '/recycle-bin', permission: 'documents.view' }, // Changed to documents.view so it shows with file management
 ]
 
 const managementItemsConfig = [
@@ -62,13 +64,23 @@ export function BankingLayout({ children, user }: BankingLayoutProps) {
   const userPermissions = user?.permissions || []
   const hasAnyPermission = userPermissions.length > 0
 
-  const menuItems = menuItemsConfig.filter(item =>
-    userPermissions.some(p => p === item.permission || p.startsWith(item.permission.split('.')[0]))
-  )
+  const menuItems = menuItemsConfig.filter(item => {
+    // Check for exact match or partial match
+    return userPermissions.some(p => 
+      p === item.permission || // Exact match
+      p.startsWith(item.permission.split('.')[0]) || // Module prefix match
+      item.permission.startsWith(p.split('.')[0]) // Allow if user has broader permission
+    )
+  })
 
-  const managementItems = managementItemsConfig.filter(item =>
-    userPermissions.some(p => p === item.permission || p.startsWith(item.permission.split('.')[0]))
-  )
+  const managementItems = managementItemsConfig.filter(item => {
+    // Check for exact match or partial match
+    return userPermissions.some(p => 
+      p === item.permission || // Exact match
+      p.startsWith(item.permission.split('.')[0]) || // Module prefix match
+      item.permission.startsWith(p.split('.')[0]) // Allow if user has broader permission
+    )
+  })
 
   // If user has no permissions, show no-access message
   if (!hasAnyPermission) {
